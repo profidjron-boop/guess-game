@@ -1,36 +1,153 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Guess Duel
 
-## Getting Started
+Полностью рабочая многопользовательская браузерная игра для зрителей спортивных и киберспортивных трансляций.
 
-First, run the development server:
+Игроки в реальном времени нажимают `СЕЙЧАС!` в момент наступления события и соревнуются по точности.
+Серия раундов, очки, серии и таблицы синхронизируются через Supabase Realtime.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+## Возможности
+
+- Лобби: ник, аватар, список комнат, создание и вход
+- Комната ожидания: код комнаты, ссылка-приглашение, онлайн-участники, готовность, хост-старт
+- Игровой экран: живой таймер, событие раунда, кнопка `СЕЙЧАС!`, блок после одного нажатия
+- Результаты раунда: событие, время клика, delta, очки, победитель раунда
+- Итоги игры: топ-3 с анимацией, полная таблица, метрики точности и серии
+- Глобальный лидерборд: топ-20 + фильтр `спорт / киберспорт / все`
+
+## Стек
+
+- Next.js 14+ (App Router)
+- TypeScript
+- Tailwind CSS
+- Supabase (Postgres + Realtime)
+- Framer Motion
+- Деплой: Vercel
+
+## Структура проекта
+
+```text
+app/
+  leaderboard/
+  room/[code]/
+components/
+hooks/
+lib/
+  game/
+  supabase/
+supabase/
+types/
+проект разработки/
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Supabase setup
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+1) Создайте Supabase project.
+2) Включите Realtime для таблиц:
+   - `rooms`
+   - `participants`
+   - `rounds`
+   - `guesses`
+   - `leaderboard`
+3) Импортируйте SQL schema:
+   - `supabase/schema.sql`
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Примечание: в этом проекте guest-игроки не используют Supabase Auth.
+Для локального/демо запуска RLS в схеме не включён по умолчанию.
+Если вы включаете RLS, добавьте policies для чтения/записи таблиц и вызовов функций.
 
-## Learn More
+## Env
 
-To learn more about Next.js, take a look at the following resources:
+Скопируйте `.env.example` в `.env.local` и заполните:
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```bash
+cp .env.example .env.local
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+- `NEXT_PUBLIC_SUPABASE_URL`
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY`
 
-## Deploy on Vercel
+## Локальный запуск
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+```bash
+npm install
+npm run dev
+```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Откройте `http://localhost:3000`.
+
+## Как проверить игру (быстрый smoke-test)
+
+1. Откройте сайт в двух вкладках (или двух браузерах).
+2. Вкладка A: создайте комнату.
+3. Вкладка B: зайдите в эту комнату по коду/ссылке.
+4. Хост во вкладке A запускает игру.
+5. В каждом раунде оба игрока нажимают `СЕЙЧАС!`.
+6. Проверьте:
+   - синхронизацию таблицы очков в обеих вкладках;
+   - модалку результатов раунда;
+   - финальный экран;
+   - появление записей в глобальном leaderboard.
+
+## Деплой на Vercel
+
+1) Подключите репозиторий к Vercel.
+2) В Vercel Dashboard -> Project Settings -> Environment Variables добавьте:
+   - `NEXT_PUBLIC_SUPABASE_URL`
+   - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+3) Деплой.
+
+## Schema & функции
+
+Файл `supabase/schema.sql` содержит:
+
+- таблицы: `rooms`, `participants`, `round_templates`, `rounds`, `guesses`, `leaderboard`
+- функции:
+  - `compute_base_points(delta_ms)`
+  - `apply_round_results(room_id, round_id)` (очки, streak/серии, winner раунда)
+  - `finalize_game(room_id)` (запись результатов в `leaderboard`)
+
+## Игровая математика
+
+- Базовые очки:
+  - `0-500 ms` -> `1000`
+  - `501-1000 ms` -> `750`
+  - `1001-2000 ms` -> `500`
+  - `2001-5000 ms` -> `250`
+  - `>5000 ms` -> `0`
+- Раннее нажатие (`delta_ms < 0`) -> штраф `-100`
+- Серия:
+  - 2 точных подряд (`|delta| <= 1000`) -> `x1.5`
+  - 3+ точных подряд -> `x2`
+
+## Данные раундов
+
+`round_templates` содержит 5 раундов (Гол/Удар в голову/Килл/Нокаут/Пойнт/Фраг).
+
+## Документация по разработке
+
+Полный пакет документов и плана находится в:
+- `проект разработки/`
+
+Главный индекс:
+- `проект разработки/GUESS_DUEL_DOCUMENT_INDEX_v1_0.md`
+
+## GitHub (подготовка)
+
+Если remote уже задан:
+
+```bash
+git remote -v
+```
+
+Если нужно добавить remote:
+
+```bash
+git remote add origin https://github.com/profidjron-boop/guess-game.git
+```
+
+Публикация (после commit):
+
+```bash
+git push -u origin main
+```
+

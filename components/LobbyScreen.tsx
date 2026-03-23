@@ -164,7 +164,9 @@ export default function LobbyScreen() {
         <div className="flex items-center justify-between gap-3 mb-4">
           <div>
             <div className="text-xl md:text-2xl font-black tracking-tight">Дуэль тайминга</div>
-            <div className="text-xs md:text-sm text-zinc-400">Мультиплеерная дуэль точности по таймингу событий.</div>
+            <div className="text-xs md:text-sm text-zinc-400">
+              Мультиплеерная дуэль точности по таймингу событий.
+            </div>
           </div>
           <a
             href="/leaderboard"
@@ -192,7 +194,10 @@ export default function LobbyScreen() {
           <div className="mt-5 grid grid-cols-1 sm:grid-cols-3 gap-2.5 md:gap-3">
             {[
               { title: "Мультиплеер в реальном времени", hint: "Общая сессия для всех игроков" },
-              { title: "Подсчет точности до миллисекунд", hint: "Очки зависят от точности попадания" },
+              {
+                title: "Подсчет точности до миллисекунд",
+                hint: "Очки зависят от точности попадания",
+              },
               { title: "Живой лидерборд", hint: "Таблица обновляется мгновенно" },
             ].map((item) => (
               <div
@@ -219,7 +224,7 @@ export default function LobbyScreen() {
                 value={joinCode}
                 onChange={(e) => setJoinCode(e.target.value.toUpperCase())}
                 placeholder="Код комнаты"
-                className="w-full px-3 py-3.5 rounded-2xl bg-black/40 border border-white/10 outline-none focus:border-white/30 focus:ring-2 focus:ring-white/10"
+                className="w-full px-3 py-3.5 rounded-2xl bg-black/50 text-white placeholder:text-zinc-500 border border-white/15 outline-none focus:border-emerald-300/50 focus:ring-2 focus:ring-emerald-300/20 caret-emerald-300"
               />
               <button
                 type="button"
@@ -248,7 +253,7 @@ export default function LobbyScreen() {
                   value={nicknameValue}
                   onChange={(e) => update({ nickname: e.target.value })}
                   placeholder="Например: Flash"
-                  className="w-full px-3 py-2.5 rounded-xl bg-black/30 border border-white/10 outline-none focus:border-white/25 focus:ring-2 focus:ring-white/10"
+                  className="w-full px-3 py-2.5 rounded-xl bg-black/50 text-white placeholder:text-zinc-500 border border-white/15 outline-none focus:border-emerald-300/50 focus:ring-2 focus:ring-emerald-300/20 caret-emerald-300"
                 />
               </label>
 
@@ -274,7 +279,9 @@ export default function LobbyScreen() {
             <div className="mt-3">
               <div className="mt-4 flex items-center justify-between">
                 <div className="text-sm text-zinc-400">Активные комнаты</div>
-                <div className="text-xs text-zinc-500">{loadingRooms ? "обновляю..." : "онлайн"}</div>
+                <div className="text-xs text-zinc-500">
+                  {loadingRooms ? "обновляю..." : "онлайн"}
+                </div>
               </div>
 
               <div className="mt-3 space-y-2">
@@ -294,7 +301,9 @@ export default function LobbyScreen() {
                       <div className="flex items-center justify-between gap-3">
                         <div>
                           <div className="text-sm font-black tracking-tight">Код: {r.code}</div>
-                          <div className="text-xs text-zinc-500">Хост: {r.host_id.slice(0, 6)}…</div>
+                          <div className="text-xs text-zinc-500">
+                            Хост: {r.host_id.slice(0, 6)}…
+                          </div>
                         </div>
                         <div className="text-xs text-zinc-400 font-semibold">Войти →</div>
                       </div>
@@ -311,4 +320,3 @@ export default function LobbyScreen() {
     </div>
   );
 }
-

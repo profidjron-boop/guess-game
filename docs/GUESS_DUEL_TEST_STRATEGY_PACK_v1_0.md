@@ -105,3 +105,8 @@ Project: Guess Duel
 
 - `format:check`, `lint`, `test:unit`, `test:e2e`, `build`, `audit:deps`, `test:load` -> passed
 - load p95 on re-run: `23.62ms`, error rate: `0.00%`
+
+8. DESM единый прогон (2026-03-24):
+
+- Добавлена команда `npm run verify:desm` (см. `docs/DESM_VERIFY.md`): все шаги из п.1–5 + e2e за один вызов — **passed**
+- `npm run verify:desm:load` (= `test:load`) при поднятом сервере на :3000 — **passed** (p95 ~9.3ms, `http_req_failed=0%`)

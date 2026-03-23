@@ -7,6 +7,8 @@ Purpose: master index of all governing documents for this project
 
 All listed files live in the repository folder `docs/` (formerly a Cyrillic-named docs folder).
 
+Release verification shortcut: `docs/DESM_VERIFY.md` + `npm run verify:desm`.
+
 ---
 
 ## 1) Strategic / governing

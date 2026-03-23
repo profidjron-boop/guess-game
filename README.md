@@ -99,13 +99,17 @@ npm run dev
 
 ## Проверки качества и тесты
 
+**Полный прогон (DESM):** `npm run verify:desm` — подряд `format:check` → `lint` → `test:unit` → `build` → `audit:deps` → `test:e2e`. Подробности: [`docs/DESM_VERIFY.md`](docs/DESM_VERIFY.md).
+
+Отдельные шаги:
+
 - `npm run lint`
 - `npm run test:unit` (Vitest)
 - `npm run build`
 - `npm run format:check`
 - `npm run audit:deps`
 - `npm run test:e2e` (Playwright, в т.ч. путь через каталог матчей)
-- `npm run test:load` (k6, при установленном `k6`)
+- `npm run test:load` (k6, при установленном `k6` и запущенном `next start` на :3000)
 
 ### Последний подтверждённый прогон
 

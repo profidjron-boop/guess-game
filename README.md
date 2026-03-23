@@ -126,6 +126,9 @@ npm run dev
 
 1. Импорт репозитория, переменные `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`.
 2. Для production рекомендуется отдельный проект Supabase.
+3. **Root Directory** в настройках проекта Vercel оставьте **пустым** (код в корне репозитория). Иначе CLI/деплой может искать несуществующую вложенную папку — см. [`docs/VERCEL_DEPLOY.md`](docs/VERCEL_DEPLOY.md).
+
+После push в `main` деплой обычно подхватывается из Git; ручной прогон: **Deployments → Redeploy** или `npx vercel deploy --prod` (см. документ выше).
 
 ## CI/CD
 

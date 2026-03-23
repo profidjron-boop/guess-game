@@ -7,28 +7,34 @@ Project: Guess Duel
 ---
 
 ## 1) Source file
+
 - `supabase/schema.sql`
 
 ---
 
 ## 2) Core entities
-1) `rooms`
+
+1. `rooms`
+
 - `id`, `code`, `status` (`waiting|playing|finished`)
 - `host_id`
 - `current_round`, `total_rounds`
 - `started_at`
 
-2) `participants`
+2. `participants`
+
 - `room_id` -> rooms
 - `player_id` (local UUID)
 - `nickname`, `avatar`
 - `score` (game total), `streak`, `max_streak`
 - `connected`, `ready`
 
-3) `round_templates`
+3. `round_templates`
+
 - 5 шаблонов раундов: `round_number`, `title`, `category`, `duration_ms`
 
-4) `rounds`
+4. `rounds`
+
 - `room_id`
 - `round_number`
 - `title`, `category`
@@ -37,14 +43,16 @@ Project: Guess Duel
 - `status` (`pending|running|ended`)
 - `winner_player_id`
 
-5) `guesses`
+5. `guesses`
+
 - `room_id`, `round_id`
 - `player_id`
 - `press_time_ms` (computed at press)
 - `delta_ms` = press - event
 - `points`
 
-6) `leaderboard`
+6. `leaderboard`
+
 - `room_id`, `player_id`
 - `nickname`, `avatar`
 - `total_score`, `avg_delta_ms`, `best_delta_ms`
@@ -53,6 +61,7 @@ Project: Guess Duel
 ---
 
 ## 3) Indexes/constraints
+
 - unique:
   - `rooms.code`
   - `participants(room_id, player_id)`
@@ -69,20 +78,23 @@ Project: Guess Duel
 ---
 
 ## 4) Scoring functions
-1) `compute_base_points(delta_ms)`
+
+1. `compute_base_points(delta_ms)`
+
 - thresholds windows:
   - 0-500 => 1000
   - 501-1000 => 750
   - 1001-2000 => 500
   - 2001-5000 => 250
-  - >5000 => 0
+  - > 5000 => 0
 - early press penalty: delta_ms < 0 => -100
 
-2) `apply_round_results(room_id, round_id)`
+2. `apply_round_results(room_id, round_id)`
+
 - mark round ended
 - set winner_player_id (min abs delta)
 - update participants score + streak/multiplier
 
-3) `finalize_game(room_id)`
-- upsert into leaderboard
+3. `finalize_game(room_id)`
 
+- upsert into leaderboard

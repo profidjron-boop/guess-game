@@ -5,6 +5,8 @@ Date: 2026-03-24
 Product: Guess Duel  
 Purpose: master index of all governing documents for this project
 
+All listed files live in the repository folder `docs/` (formerly a Cyrillic-named docs folder).
+
 ---
 
 ## 1) Strategic / governing

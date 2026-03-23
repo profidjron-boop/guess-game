@@ -224,7 +224,8 @@ export default function LobbyScreen() {
                 value={joinCode}
                 onChange={(e) => setJoinCode(e.target.value.toUpperCase())}
                 placeholder="Код комнаты"
-                className="w-full px-3 py-3.5 rounded-2xl bg-black/50 text-white placeholder:text-zinc-500 border border-white/15 outline-none focus:border-emerald-300/50 focus:ring-2 focus:ring-emerald-300/20 caret-emerald-300"
+                style={{ WebkitTextFillColor: "#111827" }}
+                className="w-full px-3 py-3.5 rounded-2xl bg-white text-zinc-900 placeholder:text-zinc-500 border border-zinc-300 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-300/40 caret-emerald-600"
               />
               <button
                 type="button"
@@ -253,7 +254,8 @@ export default function LobbyScreen() {
                   value={nicknameValue}
                   onChange={(e) => update({ nickname: e.target.value })}
                   placeholder="Например: Flash"
-                  className="w-full px-3 py-2.5 rounded-xl bg-black/50 text-white placeholder:text-zinc-500 border border-white/15 outline-none focus:border-emerald-300/50 focus:ring-2 focus:ring-emerald-300/20 caret-emerald-300"
+                  style={{ WebkitTextFillColor: "#111827" }}
+                  className="w-full px-3 py-2.5 rounded-xl bg-white text-zinc-900 placeholder:text-zinc-500 border border-zinc-300 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-300/40 caret-emerald-600"
                 />
               </label>
 

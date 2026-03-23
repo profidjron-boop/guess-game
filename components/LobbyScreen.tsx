@@ -191,9 +191,9 @@ export default function LobbyScreen() {
 
           <div className="mt-5 grid grid-cols-1 sm:grid-cols-3 gap-2.5 md:gap-3">
             {[
-              { title: "Real-time multiplayer", hint: "Общая сессия для всех игроков" },
-              { title: "Millisecond accuracy scoring", hint: "Очки по точности до миллисекунд" },
-              { title: "Live leaderboard", hint: "Таблица обновляется мгновенно" },
+              { title: "Мультиплеер в реальном времени", hint: "Общая сессия для всех игроков" },
+              { title: "Подсчет точности до миллисекунд", hint: "Очки зависят от точности попадания" },
+              { title: "Живой лидерборд", hint: "Таблица обновляется мгновенно" },
             ].map((item) => (
               <div
                 key={item.title}

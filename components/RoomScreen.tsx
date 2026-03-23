@@ -37,14 +37,14 @@ function classifyResult(deltaMs: number | null | undefined): {
   label: string;
   tone: ResultTone;
 } {
-  if (deltaMs == null) return { label: "Missed the moment", tone: "poor" };
-  if (deltaMs < 0) return { label: "Too early", tone: "early" };
+  if (deltaMs == null) return { label: "Момент пропущен", tone: "poor" };
+  if (deltaMs < 0) return { label: "Слишком рано", tone: "early" };
   const abs = Math.abs(deltaMs);
-  if (abs <= 500) return { label: "Perfect timing", tone: "perfect" };
-  if (abs <= 1000) return { label: "Great hit", tone: "great" };
-  if (abs <= 2000) return { label: "Close enough", tone: "close" };
-  if (abs <= 5000) return { label: "Close enough", tone: "close" };
-  return { label: "Missed the moment", tone: "poor" };
+  if (abs <= 500) return { label: "Идеальный тайминг", tone: "perfect" };
+  if (abs <= 1000) return { label: "Отличное попадание", tone: "great" };
+  if (abs <= 2000) return { label: "Близко", tone: "close" };
+  if (abs <= 5000) return { label: "Близко", tone: "close" };
+  return { label: "Момент пропущен", tone: "poor" };
 }
 
 function toneClasses(tone: ResultTone) {
@@ -75,6 +75,12 @@ function toneClasses(tone: ResultTone) {
         text: "text-zinc-300",
       };
   }
+}
+
+function connStatusLabel(status: "connected" | "reconnecting" | "disconnected") {
+  if (status === "connected") return "подключено";
+  if (status === "reconnecting") return "переподключение";
+  return "отключено";
 }
 
 export default function RoomScreen() {
@@ -674,7 +680,7 @@ export default function RoomScreen() {
                 connStatus === "disconnected" && "border-rose-400/40 bg-rose-500/15 text-rose-200"
               )}
             >
-              {connStatus}
+              {connStatusLabel(connStatus)}
             </span>
             {myParticipant ? <PlayerBadge nickname={myParticipant.nickname} avatar={myParticipant.avatar} compact /> : <div className="text-xs text-zinc-500">Подключение...</div>}
           </div>
@@ -1183,7 +1189,7 @@ export default function RoomScreen() {
                     </div>
                   </div>
                   <div className="rounded-xl border border-white/15 bg-white/5 px-3 py-2">
-                    <div className="text-[11px] uppercase tracking-wide text-zinc-400">Total score</div>
+                    <div className="text-[11px] uppercase tracking-wide text-zinc-400">Общий счет</div>
                     <div className="text-sm font-black text-white">{myParticipant?.score ?? 0}</div>
                   </div>
                   <div className="rounded-xl border border-amber-400/30 bg-amber-500/10 px-3 py-2">
@@ -1224,7 +1230,7 @@ export default function RoomScreen() {
                             <td className={clsx("px-3 py-3 text-sm font-black", tone.text)}>{g ? g.points : 0}</td>
                             <td className="px-3 py-3">
                               <span className={clsx("text-[11px] px-2 py-1 rounded-full border font-bold", tone.pill)}>
-                                {g ? (isEarly ? "Too early" : label) : "Missed the moment"}
+                                {g ? (isEarly ? "Слишком рано" : label) : "Момент пропущен"}
                               </span>
                             </td>
                           </tr>
@@ -1245,7 +1251,7 @@ export default function RoomScreen() {
                         <div className="flex items-center justify-between gap-2">
                           <div className="text-sm font-black">#{item.round.round_number} {item.round.title}</div>
                           <span className={clsx("text-[11px] px-2 py-1 rounded-full border font-bold", tone.pill)}>
-                            {g ? result.label : "Missed the moment"}
+                            {g ? result.label : "Момент пропущен"}
                           </span>
                         </div>
                         <div className="mt-2 grid grid-cols-2 gap-2 text-xs">

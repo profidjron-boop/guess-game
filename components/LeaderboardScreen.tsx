@@ -23,7 +23,7 @@ function formatPlayedAt(iso: string) {
 }
 
 function categoryLabel(category: Category) {
-  return category === "sport" ? "Sports" : "Esports";
+  return category === "sport" ? "Спорт" : "Киберспорт";
 }
 
 function isHexColor(s: string) {
@@ -69,7 +69,7 @@ export default function LeaderboardScreen() {
     };
   }, [filter]);
 
-  const label = filter === "all" ? "All" : filter === "sport" ? "Sports" : "Esports";
+  const label = filter === "all" ? "Все" : filter === "sport" ? "Спорт" : "Киберспорт";
   const top3 = rows.slice(0, 3);
 
   return (
@@ -101,7 +101,7 @@ export default function LeaderboardScreen() {
                   : "border-white/10 bg-white/5 text-zinc-200 hover:bg-white/10",
               ].join(" ")}
             >
-              {v === "all" ? "All" : v === "sport" ? "Sports" : "Esports"}
+              {v === "all" ? "Все" : v === "sport" ? "Спорт" : "Киберспорт"}
             </button>
           ))}
           <div className="ml-auto text-xs text-zinc-500 self-center">{label}</div>
@@ -150,7 +150,7 @@ export default function LeaderboardScreen() {
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.2, delay: idx * 0.05 }}
                   >
-                    <div className="text-[11px] font-black text-zinc-300">TOP {rank}</div>
+                    <div className="text-[11px] font-black text-zinc-300">ТОП {rank}</div>
                     <div className="mt-2">
                       <PlayerBadge nickname={r.nickname} avatar={r.avatar} />
                     </div>
@@ -183,16 +183,16 @@ export default function LeaderboardScreen() {
                   </div>
                   <div className="mt-2 grid grid-cols-2 gap-2 text-xs">
                     <div className="text-zinc-400">
-                      Total score: <span className="text-white font-black">{r.total_score}</span>
+                      Общий счет: <span className="text-white font-black">{r.total_score}</span>
                     </div>
                     <div className="text-zinc-400">
-                      Avg accuracy: <span className="text-sky-200 font-semibold">{formatMs(r.avg_delta_ms)}</span>
+                      Средняя точность: <span className="text-sky-200 font-semibold">{formatMs(r.avg_delta_ms)}</span>
                     </div>
                     <div className="text-zinc-400">
-                      Best accuracy: <span className="text-emerald-200 font-semibold">{formatMs(r.best_delta_ms)}</span>
+                      Лучшая точность: <span className="text-emerald-200 font-semibold">{formatMs(r.best_delta_ms)}</span>
                     </div>
                     <div className="text-zinc-400">
-                      Played at: <span className="text-zinc-200 font-semibold">{formatPlayedAt(r.played_at)}</span>
+                      Сыграно: <span className="text-zinc-200 font-semibold">{formatPlayedAt(r.played_at)}</span>
                     </div>
                   </div>
                 </div>
@@ -205,14 +205,14 @@ export default function LeaderboardScreen() {
                 <table className="w-full text-left">
                   <thead>
                     <tr className="text-xs uppercase text-zinc-400 bg-black/20">
-                      <th className="px-4 py-3">Rank</th>
-                      <th className="px-4 py-3">Nickname</th>
-                      <th className="px-4 py-3">Avatar</th>
-                      <th className="px-4 py-3">Total score</th>
-                      <th className="px-4 py-3">Average accuracy</th>
-                      <th className="px-4 py-3">Best accuracy</th>
-                      <th className="px-4 py-3">Category</th>
-                      <th className="px-4 py-3">Played at</th>
+                      <th className="px-4 py-3">Ранг</th>
+                      <th className="px-4 py-3">Никнейм</th>
+                      <th className="px-4 py-3">Аватар</th>
+                      <th className="px-4 py-3">Общий счет</th>
+                      <th className="px-4 py-3">Средняя точность</th>
+                      <th className="px-4 py-3">Лучшая точность</th>
+                      <th className="px-4 py-3">Категория</th>
+                      <th className="px-4 py-3">Сыграно</th>
                     </tr>
                   </thead>
                   <tbody>

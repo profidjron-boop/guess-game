@@ -15,7 +15,7 @@ const geistMono = localFont({
 
 export const metadata: Metadata = {
   title: "Guess Duel",
-  description: "Multiplayer event timing game (Guess Duel).",
+  description: "Мультиплеерная игра на точность тайминга событий.",
 };
 
 export default function RootLayout({

@@ -1,14 +1,14 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase/client";
 import AvatarPicker from "@/components/AvatarPicker";
 import PlayerBadge from "@/components/PlayerBadge";
 import { usePlayerProfile } from "@/hooks/usePlayerProfile";
-import { getMatchBySlug } from "@/lib/matches/catalog";
-import type { Room } from "@/types/game";
+import { categoryLabel, getMatchBySlug } from "@/lib/matches/catalog";
+import type { LeaderboardRow, Room } from "@/types/game";
 
 type Props = {
   slug: string;
@@ -33,6 +33,77 @@ export default function MatchDetailsScreen({ slug }: Props) {
   const [joinCode, setJoinCode] = useState("");
   const [busy, setBusy] = useState<"create" | "join" | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [rooms, setRooms] = useState<Room[]>([]);
+  const [rows, setRows] = useState<LeaderboardRow[]>([]);
+
+  const selectedTeam = selectedSide === "home" ? (match?.homeTeam ?? "") : (match?.awayTeam ?? "");
+  const selectedEvent = match?.modes[selectedMode] ?? match?.modes[0] ?? null;
+  const canProceed = derived.isReady;
+  const eventForTeam = `${selectedEvent?.label ?? "Событие"} — ${selectedTeam}`;
+
+  useEffect(() => {
+    if (!match) return;
+    let mounted = true;
+
+    const loadRooms = async () => {
+      const byMatch = await supabase
+        .from("rooms")
+        .select("*")
+        .eq("status", "waiting")
+        .eq("match_slug", match.slug)
+        .order("created_at", { ascending: false })
+        .limit(12);
+
+      if (!mounted) return;
+      if (byMatch.data && byMatch.data.length > 0) {
+        setRooms(byMatch.data as Room[]);
+        return;
+      }
+
+      const fallback = await supabase
+        .from("rooms")
+        .select("*")
+        .eq("status", "waiting")
+        .order("created_at", { ascending: false })
+        .limit(12);
+      if (!mounted) return;
+      setRooms((fallback.data ?? []) as Room[]);
+    };
+
+    const loadLeaderboard = async () => {
+      const matchRooms = await supabase
+        .from("rooms")
+        .select("id")
+        .eq("match_slug", match.slug)
+        .eq("status", "finished")
+        .limit(100);
+      const ids = (matchRooms.data ?? []).map((x) => x.id);
+      if (ids.length === 0) {
+        if (mounted) setRows([]);
+        return;
+      }
+      const { data } = await supabase
+        .from("leaderboard")
+        .select("*")
+        .in("room_id", ids)
+        .order("total_score", { ascending: false })
+        .limit(50);
+      if (!mounted) return;
+      setRows((data ?? []) as LeaderboardRow[]);
+    };
+
+    loadRooms();
+    loadLeaderboard();
+    const id = setInterval(() => {
+      loadRooms();
+      loadLeaderboard();
+    }, 5000);
+
+    return () => {
+      mounted = false;
+      clearInterval(id);
+    };
+  }, [match?.slug, match]);
 
   if (!match) {
     return (
@@ -50,12 +121,8 @@ export default function MatchDetailsScreen({ slug }: Props) {
     );
   }
 
-  const selectedTeam = selectedSide === "home" ? match.homeTeam : match.awayTeam;
-  const selectedEvent = match.modes[selectedMode] ?? match.modes[0];
-  const canProceed = derived.isReady;
-
   const createRoom = async () => {
-    if (!profile || !selectedEvent) return;
+    if (!profile || !selectedEvent || !match) return;
     setError(null);
     setBusy("create");
     try {
@@ -73,13 +140,10 @@ export default function MatchDetailsScreen({ slug }: Props) {
           match_title: match.title,
           match_home_team: match.homeTeam,
           match_away_team: match.awayTeam,
-          category:
-            match.category === "cs2" || match.category === "dota2" || match.category === "valorant"
-              ? "cyber"
-              : "sport",
+          match_category: match.category,
           league: match.league,
           event_type: selectedEvent.eventType,
-          event_label: selectedEvent.label,
+          event_label: eventForTeam,
         };
 
         const tryInsert = await supabase.from("rooms").insert(payload).select("*").single();
@@ -141,7 +205,7 @@ export default function MatchDetailsScreen({ slug }: Props) {
   };
 
   const joinRoom = async () => {
-    if (!profile) return;
+    if (!profile || !match) return;
     setError(null);
     setBusy("join");
     try {
@@ -193,7 +257,9 @@ export default function MatchDetailsScreen({ slug }: Props) {
       <div className="max-w-6xl mx-auto px-4 py-6">
         <div className="flex items-center justify-between gap-3">
           <div>
-            <div className="text-xs text-zinc-300">{match.league}</div>
+            <div className="text-xs text-zinc-300">
+              {categoryLabel(match.category)} • {match.league} • {match.status.toUpperCase()}
+            </div>
             <h1 className="text-3xl font-black text-white">
               {match.homeTeam} — {match.awayTeam}
             </h1>
@@ -278,9 +344,7 @@ export default function MatchDetailsScreen({ slug }: Props) {
           <div className="rounded-2xl border border-white/20 bg-white/12 p-4">
             <div className="text-lg font-black text-white">Играть по матчу</div>
             <div className="text-sm text-zinc-200 mt-1">Match: {match.title}</div>
-            <div className="text-sm text-zinc-200">
-              Event: {selectedEvent?.label ?? "—"} ({selectedTeam})
-            </div>
+            <div className="text-sm text-zinc-200">Event: {eventForTeam}</div>
 
             <div className="mt-4 space-y-3">
               <input
@@ -325,6 +389,56 @@ export default function MatchDetailsScreen({ slug }: Props) {
               Смотрите трансляцию и нажмите «СЕЙЧАС!» в момент целевого события.
             </div>
             {error ? <div className="mt-2 text-sm text-rose-200">{error}</div> : null}
+          </div>
+        </div>
+
+        <div className="mt-5 grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <div className="rounded-2xl border border-white/20 bg-white/12 p-4">
+            <div className="text-lg font-black text-white">Комнаты по матчу</div>
+            <div className="mt-3 space-y-2">
+              {rooms.length === 0 ? (
+                <div className="rounded-xl border border-dashed border-white/25 bg-white/10 px-3 py-3 text-sm text-zinc-200">
+                  Активных комнат пока нет. Создайте первую комнату по этому матчу.
+                </div>
+              ) : (
+                rooms.map((r) => (
+                  <button
+                    key={r.id}
+                    type="button"
+                    onClick={() => setJoinCode(r.code)}
+                    className="w-full text-left rounded-xl border border-white/20 bg-white/10 hover:bg-white/20 px-3 py-2.5 transition"
+                  >
+                    <div className="text-sm font-black text-zinc-100">Код: {r.code}</div>
+                    <div className="text-xs text-zinc-300">
+                      {r.match_title ?? "Комната без матча"} • {r.event_label ?? "Событие матча"}
+                    </div>
+                  </button>
+                ))
+              )}
+            </div>
+          </div>
+
+          <div className="rounded-2xl border border-white/20 bg-white/12 p-4">
+            <div className="text-lg font-black text-white">Лидерборд по матчу</div>
+            <div className="mt-3 space-y-2">
+              {rows.slice(0, 8).map((r, idx) => (
+                <div
+                  key={r.id}
+                  className="rounded-xl border border-white/20 bg-white/10 px-3 py-2.5 flex items-center justify-between"
+                >
+                  <div className="text-sm">
+                    <span className="text-zinc-300 font-black mr-2">#{idx + 1}</span>
+                    <span className="text-zinc-100 font-semibold">{r.nickname}</span>
+                  </div>
+                  <div className="text-sm font-black text-emerald-200">{r.total_score}</div>
+                </div>
+              ))}
+              {rows.length === 0 ? (
+                <div className="rounded-xl border border-dashed border-white/25 bg-white/10 px-3 py-3 text-sm text-zinc-200">
+                  Пока нет завершённых матчей для рейтинга.
+                </div>
+              ) : null}
+            </div>
           </div>
         </div>
       </div>

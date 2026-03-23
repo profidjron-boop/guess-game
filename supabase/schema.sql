@@ -511,6 +511,7 @@ alter table public.rooms add column if not exists match_slug text;
 alter table public.rooms add column if not exists match_title text;
 alter table public.rooms add column if not exists match_home_team text;
 alter table public.rooms add column if not exists match_away_team text;
+alter table public.rooms add column if not exists match_category text;
 alter table public.rooms add column if not exists league text;
 alter table public.rooms add column if not exists event_type text;
 alter table public.rooms add column if not exists event_label text;

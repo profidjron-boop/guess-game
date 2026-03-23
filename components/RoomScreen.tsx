@@ -462,7 +462,7 @@ export default function RoomScreen() {
         return {
           room_id: roomId,
           round_number: t.round_number,
-          title: t.title,
+          title: room.event_label ?? t.title,
           category: t.category,
           duration_ms: durationMs,
           event_time_ms: generateEventTimeMs(durationMs),
@@ -1199,6 +1199,14 @@ export default function RoomScreen() {
                       </span>{" "}
                       • Раунд {roundModal.round.round_number}
                     </div>
+                    {room.match_title ? (
+                      <div className="text-xs text-zinc-200 mt-1">
+                        Match: {room.match_title} • Event:{" "}
+                        <span className="font-semibold text-emerald-200">
+                          {room.event_label ?? "Событие вашей команды"}
+                        </span>
+                      </div>
+                    ) : null}
                   </div>
                   <div className="text-right">
                     <div className="text-xs text-zinc-400">Победитель</div>
@@ -1350,6 +1358,14 @@ export default function RoomScreen() {
                 <div>
                   <div className="text-xs text-zinc-400">Игра завершена</div>
                   <div className="text-2xl font-black tracking-tight">Итоговый пьедестал</div>
+                  {room.match_title ? (
+                    <div className="text-sm text-zinc-200 mt-1">
+                      Match: {room.match_title} • You backed{" "}
+                      <span className="font-semibold text-emerald-200">
+                        {myParticipant?.selected_team ?? "вашу команду"}
+                      </span>
+                    </div>
+                  ) : null}
                 </div>
                 <div className="text-right">
                   <div className="text-xs text-zinc-400">Ваша позиция</div>
@@ -1608,18 +1624,18 @@ export default function RoomScreen() {
                 <div className="mt-4 grid grid-cols-2 md:grid-cols-4 gap-2.5">
                   <div className="rounded-xl border border-emerald-400/30 bg-emerald-500/10 px-3 py-2">
                     <div className="text-[11px] uppercase tracking-wide text-zinc-400">
-                      Best delta
+                      Лучшая дельта
                     </div>
                     <div className="text-sm font-black text-emerald-200">
-                      {myHistorySummary.bestDelta != null ? `${myHistorySummary.bestDelta}ms` : "—"}
+                      {myHistorySummary.bestDelta != null ? `${myHistorySummary.bestDelta}мс` : "—"}
                     </div>
                   </div>
                   <div className="rounded-xl border border-sky-400/30 bg-sky-500/10 px-3 py-2">
                     <div className="text-[11px] uppercase tracking-wide text-zinc-400">
-                      Average delta
+                      Средняя дельта
                     </div>
                     <div className="text-sm font-black text-sky-200">
-                      {myHistorySummary.avgDelta != null ? `${myHistorySummary.avgDelta}ms` : "—"}
+                      {myHistorySummary.avgDelta != null ? `${myHistorySummary.avgDelta}мс` : "—"}
                     </div>
                   </div>
                   <div className="rounded-xl border border-white/15 bg-white/5 px-3 py-2">
@@ -1630,7 +1646,7 @@ export default function RoomScreen() {
                   </div>
                   <div className="rounded-xl border border-amber-400/30 bg-amber-500/10 px-3 py-2">
                     <div className="text-[11px] uppercase tracking-wide text-zinc-400">
-                      Best streak
+                      Лучшая серия
                     </div>
                     <div className="text-sm font-black text-amber-200">
                       {myParticipant?.max_streak ?? 0}

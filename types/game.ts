@@ -19,6 +19,7 @@ export type Room = {
   match_title?: string | null;
   match_home_team?: string | null;
   match_away_team?: string | null;
+  match_category?: string | null;
   league?: string | null;
   event_type?: string | null;
   event_label?: string | null;
@@ -59,6 +60,10 @@ export type Round = {
   started_at: string | null;
   ended_at: string | null;
   winner_player_id: string | null;
+  match_slug?: string | null;
+  event_type?: string | null;
+  event_label?: string | null;
+  round_context?: Record<string, unknown> | null;
 };
 
 export type Guess = {

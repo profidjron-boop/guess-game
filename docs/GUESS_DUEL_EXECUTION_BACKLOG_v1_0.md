@@ -24,6 +24,8 @@ Deliverables:
 - SQL schema + indexes + seed `round_templates`
 - DB functions:
   - `compute_base_points`
+  - `submit_guess_server`
+  - `mark_round_event`
   - `apply_round_results`
   - `finalize_game`
 
@@ -36,7 +38,7 @@ Deliverables:
 - matches list + match page + team side selection
 - room/game/results/final with match/event/team context
 - realtime sync for rooms/participants/rounds
-- host controls round start + server-side finalize
+- host controls round start + **эталон на эфире** (`mark_round_event`) + server-side finalize chain
 
 Status: done
 

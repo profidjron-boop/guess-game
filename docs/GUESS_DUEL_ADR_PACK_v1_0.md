@@ -1,7 +1,7 @@
 # GUESS_DUEL_ADR_PACK_v1_0
 
-Version: v1.0  
-Date: 2026-03-23  
+Version: v1.1  
+Date: 2026-03-24  
 Project: Guess Duel
 
 ---
@@ -21,8 +21,8 @@ Pros:
 
 Cons / risks:
 
-- anti-cheat зависит от клиентских press/delta вычислений
 - при включении RLS потребуются guest policies
+- идентичность гостя по `player_id` всё ещё на стороне клиента (не полноценная аутентификация)
 
 Status:
 
@@ -61,3 +61,22 @@ Decision:
 Decision:
 
 - Supabase client wrapper не кидает exception при отсутствии env во время `next build`
+
+---
+
+## ADR-05: Broadcast anchor for round event (host)
+
+Decision:
+
+- момент события на трансляции в демо фиксирует **хост** через RPC `mark_round_event`
+- до отметки `rounds.event_time_ms` и `guesses.delta_ms` могут быть `null`
+- после отметки сервер пересчитывает дельты и вызывает `apply_round_results` / переход раунда / `finalize_game`
+
+Pros:
+
+- second-screen не претендует на синхронизацию с реальным эфиром без внешнего сигнала
+- единая серверная истина для winner и очков
+
+Cons / risks:
+
+- доверие к хосту как к «рефери» момента (приемлемо для демо/дружеской игры)

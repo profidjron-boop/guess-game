@@ -18,13 +18,14 @@ Project: Guess Duel
 
 2. Winner раунда
 
-- минимальный |delta_ms| среди игроков
+- минимальный |delta_ms| среди игроков с **не-null** `delta_ms` (после `mark_round_event`)
 
 3. Сценарий 5 раундов
 
 - хост стартует только при status `waiting`
-- кнопка блокируется после press
-- после round end показывается modal и запускается следующий раунд
+- игроки жмут `СЕЙЧАС!` (press фиксируется; до эталона `delta_ms` = null)
+- хост фиксирует эталон (`mark_round_event`) → дельты, очки, modal, следующий раунд или финал
+- кнопка у игрока блокируется после первого press в раунде
 
 4. Realtime sync
 
@@ -45,7 +46,7 @@ Project: Guess Duel
 
 2. Integration
 
-- SQL smoke: вызвать `apply_round_results` и проверить обновления participants.score/streak
+- SQL smoke: после `mark_round_event` (или прямой вызов `apply_round_results` в тестовой среде) проверить обновления participants.score/streak
 
 3. E2E
 
@@ -61,7 +62,7 @@ Project: Guess Duel
    - создать комнату, подключить 2 игрока, убедиться в synchronized списке
 3. Gameplay:
    - хост стартует игру
-   - раунды идут без зависаний
+   - в каждом раунде хост отмечает эталон; раунды идут без зависаний
 4. Finishing:
    - финальный screen показывает топ-3 и таблицу
 5. Leaderboard:

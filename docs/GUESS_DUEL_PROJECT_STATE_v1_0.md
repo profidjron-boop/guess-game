@@ -31,7 +31,7 @@ Primary user actions:
 
 Текущий governing TZ:
 
-- `GUESS_DUEL_READY_TZ_v1_0.md`
+- `GUESS_DUEL_READY_TZ_v1_0.md` (заголовок версии v1.1)
 
 Архитектурные и data governing документы:
 
@@ -49,7 +49,8 @@ Primary user actions:
 2. Матчевый контекст внедрен в room/game/results/final экраны.
 3. Расширена Supabase schema под match-centric модель (`matches`, `match_event_templates`, room/participant/round context fields).
 4. Realtime, scoring, server-side anti-cheat и round finalize сохранены без регрессий.
-5. Production URL развернут: `https://guess-duel.vercel.app`.
+5. Эталон события на трансляции: хост вызывает `mark_round_event`; `event_time_ms` до отметки `null`; `delta_ms` у guess заполняется после эталона; раунды не продвигаются клиентским таймером `sleep`.
+6. Production URL развернут: `https://guess-duel.vercel.app`.
 
 ---
 
@@ -75,7 +76,7 @@ Primary user actions:
 ## 6) Release evidence
 
 - Production: `https://guess-duel.vercel.app`
-- Code baseline: `main` branch, commits `f17102b`, `29934a8`.
+- Code baseline: `main` branch; fan-flow: `f17102b`, `29934a8`; механика эталона на эфире: `5e01684` и актуальный `supabase/schema.sql`.
 - Supabase schema: applied (user-confirmed) from `supabase/schema.sql`.
 - QA baseline executed: `format:check`, `lint`, `test:unit`, `test:e2e`, `build`, `audit:deps`, `test:load`.
 - Re-validation after second-screen UX adjustment (2026-03-24): all checks passed.

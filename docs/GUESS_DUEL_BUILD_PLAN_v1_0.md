@@ -19,7 +19,7 @@ Delivery mode: local run + Vercel deploy
 Game scope guard:
 
 - 5 раундов, одно нажатие за раунд
-- кнопка `СЕЙЧАС!` в момент события (event_time_ms в БД)
+- кнопка `СЕЙЧАС!`; эталон `event_time_ms` задаёт хост через `mark_round_event` (демо: момент на трансляции)
 - очки и winner раунда фиксируются на стороне сервера (DB function)
 
 ---

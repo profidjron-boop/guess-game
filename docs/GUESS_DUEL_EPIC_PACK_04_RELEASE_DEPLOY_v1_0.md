@@ -22,7 +22,7 @@ Status:
 - done:
   - build succeeds без env during CI/build;
   - RLS guest policies added to `supabase/schema.sql`;
-  - stricter anti-cheat path enabled via server RPC `submit_guess_server`;
+  - stricter anti-cheat path enabled via server RPC `submit_guess_server` + эталон раунда через `mark_round_event`;
   - fan-centric schema extension added and applied;
   - production deployment active on `https://guess-duel.vercel.app`.
 - open (non-blocking):

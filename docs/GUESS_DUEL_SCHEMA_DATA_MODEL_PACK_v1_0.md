@@ -1,7 +1,7 @@
 # GUESS_DUEL_SCHEMA_DATA_MODEL_PACK_v1_0
 
-Version: v1.0  
-Date: 2026-03-23  
+Version: v1.1  
+Date: 2026-03-24  
 Project: Guess Duel
 
 ---
@@ -20,6 +20,7 @@ Project: Guess Duel
 - `host_id`
 - `current_round`, `total_rounds`
 - `started_at`
+- поля контекста матча: `match_slug`, `match_title`, `league`, `event_type`, `event_label`, …
 
 2. `participants`
 
@@ -28,73 +29,48 @@ Project: Guess Duel
 - `nickname`, `avatar`
 - `score` (game total), `streak`, `max_streak`
 - `connected`, `ready`
+- `selected_team`, `selected_team_side` (fan-flow)
 
 3. `round_templates`
 
-- 5 шаблонов раундов: `round_number`, `title`, `category`, `duration_ms`
+- 5 шаблонов: `round_number`, `title`, `category`, `duration_ms`
 
 4. `rounds`
 
-- `room_id`
-- `round_number`
-- `title`, `category`
-- `duration_ms`
-- `event_time_ms` (relative to `round.started_at`)
+- `room_id`, `round_number`, `title`, `category`
+- `duration_ms` — **максимальное окно** раунда (лимит для нажатий и для отметки эталона), не «таймер матча на эфире»
+- **`event_time_ms`** — смещение в мс от `started_at` до **момента события на трансляции**; **`null`**, пока хост не вызвал `mark_round_event`
 - `status` (`pending|running|ended`)
 - `winner_player_id`
+- опционально: `match_slug`, `event_label`, `round_context`
 
 5. `guesses`
 
-- `room_id`, `round_id`
-- `player_id`
-- `press_time_ms` (computed at press)
-- `delta_ms` = press - event
+- `room_id`, `round_id`, `player_id`
+- `press_time_ms` — серверное время относительно старта раунда
+- **`delta_ms`** — `press_time_ms - event_time_ms`; **`null`**, пока эталон не зафиксирован
 - `points`
 
 6. `leaderboard`
 
-- `room_id`, `player_id`
-- `nickname`, `avatar`
-- `total_score`, `avg_delta_ms`, `best_delta_ms`
-- `category`, `played_at`
+- агрегат по игре: `total_score`, `avg_delta_ms`, `best_delta_ms`, …
 
 ---
 
-## 3) Indexes/constraints
+## 3) Ключевые функции
 
-- unique:
-  - `rooms.code`
-  - `participants(room_id, player_id)`
-  - `rounds(room_id, round_number)`
-  - `guesses(room_id, round_id, player_id)`
-  - `leaderboard(room_id, player_id)`
-- indexes:
-  - rooms(status), rooms(code)
-  - participants(room_id), participants(room_id, connected)
-  - rounds(room_id, round_number), rounds(status)
-  - guesses(round_id), guesses(player_id)
-  - leaderboard(category), leaderboard(total_score desc), leaderboard(played_at desc)
+- **`submit_guess_server`** — фиксация нажатия; дельта может быть `null` до эталона.
+- **`mark_round_event`** — хост задаёт эталон, пересчитывает дельты, запускает **`apply_round_results`**, следующий раунд или **`finalize_game`**.
+- **`apply_round_results`**, **`finalize_game`**, **`compute_base_points`** — см. `schema.sql`.
 
 ---
 
-## 4) Scoring functions
+## 4) Indexes / constraints
 
-1. `compute_base_points(delta_ms)`
+- См. `schema.sql` — unique на `(room_id, round_id, player_id)` для guesses и т.д.
 
-- thresholds windows:
-  - 0-500 => 1000
-  - 501-1000 => 750
-  - 1001-2000 => 500
-  - 2001-5000 => 250
-  - > 5000 => 0
-- early press penalty: delta_ms < 0 => -100
+---
 
-2. `apply_round_results(room_id, round_id)`
+## 5) Grants
 
-- mark round ended
-- set winner_player_id (min abs delta)
-- update participants score + streak/multiplier
-
-3. `finalize_game(room_id)`
-
-- upsert into leaderboard
+- На RPC для ролей `anon`, `authenticated`: см. конец `schema.sql` и `supabase/patch_rpc_grants.sql`.

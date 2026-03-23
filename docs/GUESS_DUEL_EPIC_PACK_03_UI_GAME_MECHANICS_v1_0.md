@@ -19,9 +19,10 @@ Deliverables:
    - only host can start
    - selected team у каждого участника
 3. Gameplay
-   - countdown timer + progress bar
+   - компактное окно/прогресс приёма нажатий (технический лимит сессии; не «часы матча»)
    - событие title + категория + match + league + selected team
-   - big button `СЕЙЧАС!` (lock after press)
+   - big button `СЕЙЧАС!` (lock after press; до эталона `delta_ms` null)
+   - у хоста: кнопка фиксации эталона на эфире → RPC `mark_round_event`
    - realtime scoreboard
 4. Round results modal
    - event time, press time, delta ms, points + match/event context
@@ -36,4 +37,4 @@ Status:
 
 Notes:
 
-- delta/press_time считаются серверно через RPC `submit_guess_server`.
+- `press_time_ms` и итоговый `delta_ms` — серверно: `submit_guess_server` + цепочка после `mark_round_event`.

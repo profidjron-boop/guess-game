@@ -11,6 +11,8 @@ Deliverables:
 2. Seed data
    - 5 round templates (Гол/Удар/Килл/Нокаут/Пойнт/Фраг)
 3. Server functions
+   - `submit_guess_server` (серверный press; `delta_ms` после эталона)
+   - `mark_round_event` (хост фиксирует эталон → пересчёт дельт → `apply_round_results` / следующий раунд / `finalize_game`)
    - `apply_round_results` (winner + streak/multiplier + update participants.score)
    - `finalize_game` (write leaderboard row)
 4. Realtime channels
@@ -22,5 +24,8 @@ Status:
 
 Follow-ups:
 
-- добавить strict серверную валидацию press timing (если нужно для anti-cheat).
-- включить RLS policies для guest-mode.
+- внешний сигнал эфира вместо ручной отметки хоста (future scope).
+
+Closed:
+
+- strict серверный press через `submit_guess_server`; RLS guest-mode в `schema.sql`.

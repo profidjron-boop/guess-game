@@ -14,7 +14,7 @@ Release verification shortcut: `docs/DESM_VERIFY.md` + `npm run verify:desm`.
 ## 1) Strategic / governing
 
 1. `GUESS_DUEL_PROJECT_STATE_v1_0.md` - project mode, constraints, stack, current slice
-2. `GUESS_DUEL_READY_TZ_v1_0.md` - readiness / scope snapshot (fan-centric v1.1)
+2. `GUESS_DUEL_READY_TZ_v1_0.md` - readiness / scope snapshot (fan-centric v1.1; эталон на эфире через `mark_round_event`)
 3. `GUESS_DUEL_BUILD_PLAN_v1_0.md` - executed phase plan (v1.1)
 
 ---
@@ -31,15 +31,15 @@ Release verification shortcut: `docs/DESM_VERIFY.md` + `npm run verify:desm`.
 
 ## 3) Architecture / data / contracts
 
-9. `GUESS_DUEL_ADR_PACK_v1_0.md` - architecture decisions authority
-10. `GUESS_DUEL_SCHEMA_DATA_MODEL_PACK_v1_0.md` - schema/data model authority (Supabase)
-11. `GUESS_DUEL_API_CONTRACT_PACK_v1_0.md` - realtime/data contract (tables + RPC)
+9. `GUESS_DUEL_ADR_PACK_v1_0.md` - architecture decisions authority (v1.1: ADR-05 эталон на эфире / `mark_round_event`)
+10. `GUESS_DUEL_SCHEMA_DATA_MODEL_PACK_v1_0.md` - schema/data model authority (Supabase), v1.1: nullable `event_time_ms`/`delta_ms` до эталона
+11. `GUESS_DUEL_API_CONTRACT_PACK_v1_0.md` - realtime/data contract (tables + RPC), v1.1: `mark_round_event`, `submit_guess_server`
 
 ---
 
 ## 4) UI / quality
 
-12. `GUESS_DUEL_UI_SYSTEM_RULES_v1_0.md` - UI/UX implementation rules
+12. `GUESS_DUEL_UI_SYSTEM_RULES_v1_0.md` - UI/UX implementation rules (v1.1: эталон — хост, таймер сессии вторичен)
 13. `GUESS_DUEL_TEST_STRATEGY_PACK_v1_0.md` - test strategy and release verification
 
 ---
@@ -62,7 +62,7 @@ Release verification shortcut: `docs/DESM_VERIFY.md` + `npm run verify:desm`.
 ## 6) Release evidence
 
 - Production URL: `https://guess-duel.vercel.app`
-- Last fan-flow implementation commits: `f17102b`, `29934a8`
+- Last fan-flow implementation commits: `f17102b`, `29934a8`; broadcast-anchor gameplay: `5e01684`
 - QA baseline executed locally (2026-03-24): format, lint, unit, e2e, build, audit, load
 
 ---

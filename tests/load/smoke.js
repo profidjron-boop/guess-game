@@ -12,7 +12,7 @@ export const options = {
 
 const BASE_URL = __ENV.BASE_URL || "http://127.0.0.1:3000";
 
-export default function () {
+function smokeLoadTest() {
   const pages = ["/", "/leaderboard"];
 
   for (const path of pages) {
@@ -24,3 +24,5 @@ export default function () {
 
   sleep(1);
 }
+
+export default smokeLoadTest;

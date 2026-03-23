@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
+import Link from "next/link";
 import { supabase } from "@/lib/supabase/client";
 import type { Category, LeaderboardRow } from "@/types/game";
 import PlayerBadge from "@/components/PlayerBadge";
@@ -78,14 +79,16 @@ export default function LeaderboardScreen() {
         <div className="flex items-center justify-between gap-3">
           <div>
             <div className="text-2xl font-black tracking-tight">Глобальные лидеры</div>
-            <div className="text-sm text-zinc-400">Топ-20 по сумме очков и точности по всем сыгранным матчам.</div>
+            <div className="text-sm text-zinc-400">
+              Топ-20 по сумме очков и точности по всем сыгранным матчам.
+            </div>
           </div>
-          <a
+          <Link
             href="/"
             className="px-4 py-2 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 transition text-sm font-semibold"
           >
             В лобби
-          </a>
+          </Link>
         </div>
 
         <div className="mt-4 flex flex-wrap gap-2">
@@ -112,24 +115,29 @@ export default function LeaderboardScreen() {
             <div className="text-sm text-zinc-400">Загрузка таблицы лидеров...</div>
             <div className="mt-3 grid grid-cols-1 gap-2">
               {[0, 1, 2].map((s) => (
-                <div key={s} className="h-16 rounded-xl bg-white/5 border border-white/10 animate-pulse" />
+                <div
+                  key={s}
+                  className="h-16 rounded-xl bg-white/5 border border-white/10 animate-pulse"
+                />
               ))}
             </div>
           </div>
         ) : error ? (
-          <div className="mt-4 rounded-2xl border border-rose-400/30 bg-rose-500/10 p-4 text-sm text-rose-200">{error}</div>
+          <div className="mt-4 rounded-2xl border border-rose-400/30 bg-rose-500/10 p-4 text-sm text-rose-200">
+            {error}
+          </div>
         ) : rows.length === 0 ? (
           <div className="mt-4 rounded-2xl border border-dashed border-white/15 bg-white/5 p-6 text-center">
             <div className="text-lg font-bold">Пока нет результатов</div>
             <div className="mt-1 text-sm text-zinc-400">
               Сыграйте первую игру — и здесь появится топ игроков с точностью по миллисекундам.
             </div>
-            <a
+            <Link
               href="/"
               className="inline-flex mt-4 px-4 py-2 rounded-xl bg-emerald-500 text-black font-black hover:bg-emerald-400 transition"
             >
               Вернуться в лобби
-            </a>
+            </Link>
           </div>
         ) : (
           <>
@@ -140,8 +148,8 @@ export default function LeaderboardScreen() {
                   rank === 1
                     ? "border-emerald-400/40 bg-emerald-500/15"
                     : rank === 2
-                    ? "border-sky-400/40 bg-sky-500/15"
-                    : "border-fuchsia-400/40 bg-fuchsia-500/15";
+                      ? "border-sky-400/40 bg-sky-500/15"
+                      : "border-fuchsia-400/40 bg-fuchsia-500/15";
                 return (
                   <motion.div
                     key={r.id}
@@ -155,7 +163,9 @@ export default function LeaderboardScreen() {
                       <PlayerBadge nickname={r.nickname} avatar={r.avatar} />
                     </div>
                     <div className="mt-2 text-xl font-black">{r.total_score}</div>
-                    <div className="text-xs text-zinc-300">avg {formatMs(r.avg_delta_ms)} • best {formatMs(r.best_delta_ms)}</div>
+                    <div className="text-xs text-zinc-300">
+                      avg {formatMs(r.avg_delta_ms)} • best {formatMs(r.best_delta_ms)}
+                    </div>
                   </motion.div>
                 );
               })}
@@ -186,13 +196,20 @@ export default function LeaderboardScreen() {
                       Общий счет: <span className="text-white font-black">{r.total_score}</span>
                     </div>
                     <div className="text-zinc-400">
-                      Средняя точность: <span className="text-sky-200 font-semibold">{formatMs(r.avg_delta_ms)}</span>
+                      Средняя точность:{" "}
+                      <span className="text-sky-200 font-semibold">{formatMs(r.avg_delta_ms)}</span>
                     </div>
                     <div className="text-zinc-400">
-                      Лучшая точность: <span className="text-emerald-200 font-semibold">{formatMs(r.best_delta_ms)}</span>
+                      Лучшая точность:{" "}
+                      <span className="text-emerald-200 font-semibold">
+                        {formatMs(r.best_delta_ms)}
+                      </span>
                     </div>
                     <div className="text-zinc-400">
-                      Сыграно: <span className="text-zinc-200 font-semibold">{formatPlayedAt(r.played_at)}</span>
+                      Сыграно:{" "}
+                      <span className="text-zinc-200 font-semibold">
+                        {formatPlayedAt(r.played_at)}
+                      </span>
                     </div>
                   </div>
                 </div>
@@ -224,35 +241,49 @@ export default function LeaderboardScreen() {
                           idx === 0
                             ? "bg-emerald-500/10"
                             : idx === 1
-                            ? "bg-sky-500/10"
-                            : idx === 2
-                            ? "bg-fuchsia-500/10"
-                            : "",
+                              ? "bg-sky-500/10"
+                              : idx === 2
+                                ? "bg-fuchsia-500/10"
+                                : "",
                         ].join(" ")}
                       >
                         <td className="px-4 py-3 text-sm font-black text-zinc-200">#{idx + 1}</td>
-                        <td className="px-4 py-3 text-sm font-semibold text-zinc-100">{r.nickname}</td>
+                        <td className="px-4 py-3 text-sm font-semibold text-zinc-100">
+                          {r.nickname}
+                        </td>
                         <td className="px-4 py-3">
                           <div
                             className="h-8 w-8 rounded-lg border border-white/15 flex items-center justify-center"
                             style={
                               isHexColor(r.avatar)
-                                ? { background: `linear-gradient(135deg, ${r.avatar}, rgba(255,255,255,0.08))` }
+                                ? {
+                                    background: `linear-gradient(135deg, ${r.avatar}, rgba(255,255,255,0.08))`,
+                                  }
                                 : { background: "rgba(255,255,255,0.06)" }
                             }
                           >
-                            {!isHexColor(r.avatar) ? <span className="text-sm">{r.avatar}</span> : null}
+                            {!isHexColor(r.avatar) ? (
+                              <span className="text-sm">{r.avatar}</span>
+                            ) : null}
                           </div>
                         </td>
                         <td className="px-4 py-3 text-sm font-black">{r.total_score}</td>
-                        <td className="px-4 py-3 text-sm text-sky-200">{formatMs(r.avg_delta_ms)}</td>
-                        <td className="px-4 py-3 text-sm text-emerald-200">{formatMs(r.best_delta_ms)}</td>
+                        <td className="px-4 py-3 text-sm text-sky-200">
+                          {formatMs(r.avg_delta_ms)}
+                        </td>
+                        <td className="px-4 py-3 text-sm text-emerald-200">
+                          {formatMs(r.best_delta_ms)}
+                        </td>
                         <td className="px-4 py-3 text-sm">
-                          <span className={r.category === "sport" ? "text-sky-200" : "text-fuchsia-200"}>
+                          <span
+                            className={r.category === "sport" ? "text-sky-200" : "text-fuchsia-200"}
+                          >
                             {categoryLabel(r.category)}
                           </span>
                         </td>
-                        <td className="px-4 py-3 text-sm text-zinc-400">{formatPlayedAt(r.played_at)}</td>
+                        <td className="px-4 py-3 text-sm text-zinc-400">
+                          {formatPlayedAt(r.played_at)}
+                        </td>
                       </tr>
                     ))}
                   </tbody>
@@ -265,4 +296,3 @@ export default function LeaderboardScreen() {
     </div>
   );
 }
-

@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
+import Link from "next/link";
 import clsx from "classnames";
 import { supabase } from "@/lib/supabase/client";
 import type { RealtimeChannel } from "@supabase/supabase-js";
@@ -108,7 +109,9 @@ export default function RoomScreen() {
   const [participants, setParticipants] = useState<Participant[]>([]);
   const [rounds, setRounds] = useState<Round[]>([]);
   const [loading, setLoading] = useState(true);
-  const [connStatus, setConnStatus] = useState<"connected" | "reconnecting" | "disconnected">("reconnecting");
+  const [connStatus, setConnStatus] = useState<"connected" | "reconnecting" | "disconnected">(
+    "reconnecting"
+  );
   const [startingGame, setStartingGame] = useState(false);
   const [submitMessage, setSubmitMessage] = useState<string | null>(null);
   const [submittingGuess, setSubmittingGuess] = useState(false);
@@ -187,11 +190,7 @@ export default function RoomScreen() {
       if (!roomCode) return;
       await refresh();
 
-      const currentRoomId = await supabase
-        .from("rooms")
-        .select("id")
-        .eq("code", roomCode)
-        .single();
+      const currentRoomId = await supabase.from("rooms").select("id").eq("code", roomCode).single();
 
       if (!mounted) return;
 
@@ -311,10 +310,7 @@ export default function RoomScreen() {
       if (!roundModal) return;
       const r = roundModal.round;
       if (!r) return;
-      const { data: guesses } = await supabase
-        .from("guesses")
-        .select("*")
-        .eq("round_id", r.id);
+      const { data: guesses } = await supabase.from("guesses").select("*").eq("round_id", r.id);
       const byPlayer = new Map<string, Guess>();
       (guesses ?? []).forEach((g) => byPlayer.set((g as Guess).player_id, g as Guess));
 
@@ -333,12 +329,20 @@ export default function RoomScreen() {
         if (winnerA && !winnerB) return -1;
         if (!winnerA && winnerB) return 1;
         const absA =
-          a.guess.hasGuess && a.guess.delta_ms != null ? Math.abs(a.guess.delta_ms) : Number.POSITIVE_INFINITY;
+          a.guess.hasGuess && a.guess.delta_ms != null
+            ? Math.abs(a.guess.delta_ms)
+            : Number.POSITIVE_INFINITY;
         const absB =
-          b.guess.hasGuess && b.guess.delta_ms != null ? Math.abs(b.guess.delta_ms) : Number.POSITIVE_INFINITY;
+          b.guess.hasGuess && b.guess.delta_ms != null
+            ? Math.abs(b.guess.delta_ms)
+            : Number.POSITIVE_INFINITY;
         if (absA !== absB) return absA - absB;
-        const pressA = a.guess.hasGuess ? a.guess.press_time_ms ?? Number.POSITIVE_INFINITY : Number.POSITIVE_INFINITY;
-        const pressB = b.guess.hasGuess ? b.guess.press_time_ms ?? Number.POSITIVE_INFINITY : Number.POSITIVE_INFINITY;
+        const pressA = a.guess.hasGuess
+          ? (a.guess.press_time_ms ?? Number.POSITIVE_INFINITY)
+          : Number.POSITIVE_INFINITY;
+        const pressB = b.guess.hasGuess
+          ? (b.guess.press_time_ms ?? Number.POSITIVE_INFINITY)
+          : Number.POSITIVE_INFINITY;
         return pressA - pressB;
       });
 
@@ -470,7 +474,12 @@ export default function RoomScreen() {
 
       await supabase
         .from("rooms")
-        .update({ status: "playing", started_at: new Date().toISOString(), current_round: 1, total_rounds: 5 })
+        .update({
+          status: "playing",
+          started_at: new Date().toISOString(),
+          current_round: 1,
+          total_rounds: 5,
+        })
         .eq("id", roomId);
 
       // Load inserted round IDs
@@ -504,7 +513,10 @@ export default function RoomScreen() {
         scheduleRefresh();
 
         if (n === list.length) {
-          await supabase.from("rooms").update({ status: "finished", current_round: list.length }).eq("id", roomId);
+          await supabase
+            .from("rooms")
+            .update({ status: "finished", current_round: list.length })
+            .eq("id", roomId);
           await supabase.rpc("finalize_game", { p_room_id: roomId });
           scheduleRefresh();
         }
@@ -555,8 +567,16 @@ export default function RoomScreen() {
         .select("player_id,delta_ms,press_time_ms,round_id")
         .eq("room_id", room.id);
 
-      const next: Record<string, { sum: number; count: number; best: number; early: number; fastest: number | null }> = {};
-      type GuessStatsRow = { player_id: string; delta_ms: number; press_time_ms: number; round_id: string };
+      const next: Record<
+        string,
+        { sum: number; count: number; best: number; early: number; fastest: number | null }
+      > = {};
+      type GuessStatsRow = {
+        player_id: string;
+        delta_ms: number;
+        press_time_ms: number;
+        round_id: string;
+      };
       (gs ?? []).forEach((g) => {
         const row = g as GuessStatsRow;
         const pid = row.player_id;
@@ -645,7 +665,9 @@ export default function RoomScreen() {
     const guessed = myRoundHistory.filter((x) => !!x.guess).map((x) => x.guess as Guess);
     const absDeltas = guessed.map((g) => Math.abs(g.delta_ms));
     const bestDelta = absDeltas.length ? Math.min(...absDeltas) : null;
-    const avgDelta = absDeltas.length ? Math.round(absDeltas.reduce((a, b) => a + b, 0) / absDeltas.length) : null;
+    const avgDelta = absDeltas.length
+      ? Math.round(absDeltas.reduce((a, b) => a + b, 0) / absDeltas.length)
+      : null;
     return {
       bestDelta,
       avgDelta,
@@ -673,7 +695,8 @@ export default function RoomScreen() {
   const shareSlogan = useMemo(() => {
     if (!myPlace) return "Максимальная точность тайминга";
     if (myPlace === 1) return "Самая острая реакция в комнате";
-    if (myHistorySummary.bestDelta != null && myHistorySummary.bestDelta <= 500) return "Идеально поймал момент";
+    if (myHistorySummary.bestDelta != null && myHistorySummary.bestDelta <= 500)
+      return "Идеально поймал момент";
     return "Топовый тайминг";
   }, [myPlace, myHistorySummary.bestDelta]);
 
@@ -688,7 +711,15 @@ export default function RoomScreen() {
       `Категория: ${categoryRuLabel(myCategory)}`,
       `Слоган: ${shareSlogan}`,
     ].join("\n");
-  }, [myParticipant?.nickname, myParticipant?.score, myPlace, myHistorySummary.bestDelta, myHistorySummary.avgDelta, myCategory, shareSlogan]);
+  }, [
+    myParticipant?.nickname,
+    myParticipant?.score,
+    myPlace,
+    myHistorySummary.bestDelta,
+    myHistorySummary.avgDelta,
+    myCategory,
+    shareSlogan,
+  ]);
 
   const copyResult = async () => {
     try {
@@ -755,13 +786,15 @@ export default function RoomScreen() {
 
     const mostAccurate = [...withMetrics]
       .filter((x) => x.metrics && x.metrics.bestAbsDeltaMs > 0)
-      .sort((a, b) => (a.metrics!.bestAbsDeltaMs - b.metrics!.bestAbsDeltaMs))[0];
+      .sort((a, b) => a.metrics!.bestAbsDeltaMs - b.metrics!.bestAbsDeltaMs)[0];
 
     const bestStreak = [...withMetrics].sort((a, b) => b.maxStreak - a.maxStreak)[0];
 
     const fastestTrigger = [...withMetrics]
       .filter((x) => x.metrics && x.metrics.fastestTriggerMs != null)
-      .sort((a, b) => (a.metrics!.fastestTriggerMs as number) - (b.metrics!.fastestTriggerMs as number))[0];
+      .sort(
+        (a, b) => (a.metrics!.fastestTriggerMs as number) - (b.metrics!.fastestTriggerMs as number)
+      )[0];
 
     const roundWinner = [...withMetrics]
       .filter((x) => x.metrics && x.metrics.roundsWon > 0)
@@ -803,16 +836,20 @@ export default function RoomScreen() {
       <div className="max-w-5xl mx-auto px-4 py-6">
         <div className="flex items-center justify-between gap-3">
           <div className="flex items-center gap-3">
-            <a
+            <Link
               href="/"
               className="px-3 py-2 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 transition text-sm font-semibold"
             >
               Лобби
-            </a>
+            </Link>
             <div>
               <div className="text-lg font-black tracking-tight">Комната {room.code}</div>
               <div className="text-xs text-zinc-400">
-                {room.status === "waiting" ? "Ожидание" : room.status === "playing" ? "Игра идёт" : "Результаты"}
+                {room.status === "waiting"
+                  ? "Ожидание"
+                  : room.status === "playing"
+                    ? "Игра идёт"
+                    : "Результаты"}
               </div>
             </div>
           </div>
@@ -821,14 +858,24 @@ export default function RoomScreen() {
             <span
               className={clsx(
                 "text-[11px] px-2 py-1 rounded-full border font-bold",
-                connStatus === "connected" && "border-emerald-400/40 bg-emerald-500/15 text-emerald-200",
-                connStatus === "reconnecting" && "border-amber-400/40 bg-amber-500/15 text-amber-200",
+                connStatus === "connected" &&
+                  "border-emerald-400/40 bg-emerald-500/15 text-emerald-200",
+                connStatus === "reconnecting" &&
+                  "border-amber-400/40 bg-amber-500/15 text-amber-200",
                 connStatus === "disconnected" && "border-rose-400/40 bg-rose-500/15 text-rose-200"
               )}
             >
               {connStatusLabel(connStatus)}
             </span>
-            {myParticipant ? <PlayerBadge nickname={myParticipant.nickname} avatar={myParticipant.avatar} compact /> : <div className="text-xs text-zinc-500">Подключение...</div>}
+            {myParticipant ? (
+              <PlayerBadge
+                nickname={myParticipant.nickname}
+                avatar={myParticipant.avatar}
+                compact
+              />
+            ) : (
+              <div className="text-xs text-zinc-500">Подключение...</div>
+            )}
           </div>
         </div>
 
@@ -878,7 +925,9 @@ export default function RoomScreen() {
                     onClick={() => toggleReady(!myParticipant.ready)}
                     className={clsx(
                       "w-full px-4 py-3 rounded-xl font-black transition",
-                      myParticipant.ready ? "bg-emerald-500 text-black" : "bg-white/10 hover:bg-white/15 text-white"
+                      myParticipant.ready
+                        ? "bg-emerald-500 text-black"
+                        : "bg-white/10 hover:bg-white/15 text-white"
                     )}
                   >
                     {myParticipant.ready ? "Готов" : "Я готов"}
@@ -892,10 +941,17 @@ export default function RoomScreen() {
                 <button
                   type="button"
                   onClick={startGame}
-                  disabled={!isHost || room.status !== "waiting" || startingGame || connStatus !== "connected"}
+                  disabled={
+                    !isHost ||
+                    room.status !== "waiting" ||
+                    startingGame ||
+                    connStatus !== "connected"
+                  }
                   className={clsx(
                     "w-full px-4 py-3 rounded-xl font-black transition",
-                    isHost ? "bg-emerald-500 text-black hover:bg-emerald-400" : "bg-white/10 text-zinc-300 cursor-not-allowed"
+                    isHost
+                      ? "bg-emerald-500 text-black hover:bg-emerald-400"
+                      : "bg-white/10 text-zinc-300 cursor-not-allowed"
                   )}
                 >
                   {isHost ? (startingGame ? "Запускаем..." : "Запустить игру") : "Ждём хоста"}
@@ -932,7 +988,9 @@ export default function RoomScreen() {
                     <div
                       className={clsx(
                         "text-xs font-semibold px-3 py-2 rounded-xl border transition",
-                        p.ready ? "border-emerald-400/40 bg-emerald-500/20 text-emerald-200" : "border-white/10 bg-white/5 text-zinc-200"
+                        p.ready
+                          ? "border-emerald-400/40 bg-emerald-500/20 text-emerald-200"
+                          : "border-white/10 bg-white/5 text-zinc-200"
                       )}
                     >
                       {p.ready ? "Готов" : "Ждёт"}
@@ -954,7 +1012,11 @@ export default function RoomScreen() {
                   <div className="text-3xl font-black tracking-tight">{runningRound.title}</div>
                   <div className="mt-1 text-sm text-zinc-400">
                     Раунд {runningRound.round_number} из {room.total_rounds} •{" "}
-                    <span className={runningRound.category === "sport" ? "text-sky-200" : "text-fuchsia-200"}>
+                    <span
+                      className={
+                        runningRound.category === "sport" ? "text-sky-200" : "text-fuchsia-200"
+                      }
+                    >
                       {runningRound.category === "sport" ? "Спорт" : "Киберспорт"}
                     </span>
                   </div>
@@ -963,7 +1025,8 @@ export default function RoomScreen() {
                   <div className="text-xs text-zinc-400">Текущий счёт</div>
                   <div className="text-2xl font-black">{myParticipant.score}</div>
                   <div className="text-xs text-zinc-500 mt-1">
-                    Серия: <span className="text-emerald-200 font-semibold">{myParticipant.streak}</span>
+                    Серия:{" "}
+                    <span className="text-emerald-200 font-semibold">{myParticipant.streak}</span>
                   </div>
                 </div>
               </div>
@@ -973,12 +1036,19 @@ export default function RoomScreen() {
               </div>
 
               <div className="mt-5">
-                <div className="text-xs text-zinc-400 mb-2">Нужно нажать ровно в момент события</div>
+                <div className="text-xs text-zinc-400 mb-2">
+                  Нужно нажать ровно в момент события
+                </div>
                 <AnimatePresence mode="wait">
                   <motion.button
                     type="button"
                     onClick={submitGuess}
-                    disabled={!!myGuess || !isRoundReadyForGuess(runningRound) || submittingGuess || connStatus !== "connected"}
+                    disabled={
+                      !!myGuess ||
+                      !isRoundReadyForGuess(runningRound) ||
+                      submittingGuess ||
+                      connStatus !== "connected"
+                    }
                     className={clsx(
                       "w-full rounded-3xl px-6 py-5 border transition",
                       myGuess
@@ -997,7 +1067,9 @@ export default function RoomScreen() {
                       transition={{ duration: 0.15 }}
                       className="flex items-center justify-center gap-3"
                     >
-                      <span className="text-3xl font-black tracking-tight">{submittingGuess ? "..." : "СЕЙЧАС!"}</span>
+                      <span className="text-3xl font-black tracking-tight">
+                        {submittingGuess ? "..." : "СЕЙЧАС!"}
+                      </span>
                       <span className="text-sm font-bold opacity-80">
                         {myGuess ? "зафиксировано" : submittingGuess ? "отправка" : "нажми"}
                       </span>
@@ -1036,7 +1108,9 @@ export default function RoomScreen() {
                     </div>
                     <div className="text-right">
                       <div className="text-sm font-black">{p.score}</div>
-                      <div className="text-[11px] text-zinc-500">x{p.streak >= 2 ? (p.streak >= 3 ? "2.0" : "1.5") : "1"}</div>
+                      <div className="text-[11px] text-zinc-500">
+                        x{p.streak >= 2 ? (p.streak >= 3 ? "2.0" : "1.5") : "1"}
+                      </div>
                     </div>
                   </div>
                 ))}
@@ -1075,15 +1149,20 @@ export default function RoomScreen() {
                       {roundModal.round.title}
                     </div>
                     <div className="text-sm text-zinc-500 mt-1">
-                      Момент события: <span className="text-emerald-200 font-semibold">{formatMs(roundModal.round.event_time_ms)}</span>
-                      {" "}• Раунд {roundModal.round.round_number}
+                      Момент события:{" "}
+                      <span className="text-emerald-200 font-semibold">
+                        {formatMs(roundModal.round.event_time_ms)}
+                      </span>{" "}
+                      • Раунд {roundModal.round.round_number}
                     </div>
                   </div>
                   <div className="text-right">
                     <div className="text-xs text-zinc-400">Победитель</div>
                     <div className="text-sm font-black text-emerald-200">
                       {roundModal.round.winner_player_id
-                        ? participants.find((p) => p.player_id === roundModal.round.winner_player_id)?.nickname ?? "—"
+                        ? (participants.find(
+                            (p) => p.player_id === roundModal.round.winner_player_id
+                          )?.nickname ?? "—")
                         : "—"}
                     </div>
                   </div>
@@ -1106,8 +1185,12 @@ export default function RoomScreen() {
                           roundModal.round.winner_player_id &&
                           row.player.player_id === roundModal.round.winner_player_id;
                         const absDelta =
-                          row.guess.hasGuess && row.guess.delta_ms != null ? Math.abs(row.guess.delta_ms) : null;
-                        const result = classifyResult(row.guess.hasGuess ? row.guess.delta_ms : null);
+                          row.guess.hasGuess && row.guess.delta_ms != null
+                            ? Math.abs(row.guess.delta_ms)
+                            : null;
+                        const result = classifyResult(
+                          row.guess.hasGuess ? row.guess.delta_ms : null
+                        );
                         const tone = toneClasses(result.tone);
 
                         return (
@@ -1123,7 +1206,11 @@ export default function RoomScreen() {
                           >
                             <td className="px-3 py-3">
                               <div className="flex items-center gap-3">
-                                <PlayerBadge nickname={row.player.nickname} avatar={row.player.avatar} compact />
+                                <PlayerBadge
+                                  nickname={row.player.nickname}
+                                  avatar={row.player.avatar}
+                                  compact
+                                />
                                 {isWinner ? (
                                   <span className="text-[11px] px-2 py-1 rounded-full bg-emerald-500/20 border border-emerald-400/30 text-emerald-200 font-black">
                                     WIN
@@ -1132,7 +1219,12 @@ export default function RoomScreen() {
                               </div>
                             </td>
                             <td className="px-3 py-3">
-                              <span className={clsx("text-[11px] px-2 py-1 rounded-full border font-bold", tone.pill)}>
+                              <span
+                                className={clsx(
+                                  "text-[11px] px-2 py-1 rounded-full border font-bold",
+                                  tone.pill
+                                )}
+                              >
                                 {result.label}
                               </span>
                             </td>
@@ -1143,13 +1235,22 @@ export default function RoomScreen() {
                               {row.guess.hasGuess ? (
                                 <span className={tone.text}>
                                   {formatMs(row.guess.delta_ms)}{" "}
-                                  {absDelta != null ? <span className="text-zinc-500 font-semibold">({absDelta}мс)</span> : null}
+                                  {absDelta != null ? (
+                                    <span className="text-zinc-500 font-semibold">
+                                      ({absDelta}мс)
+                                    </span>
+                                  ) : null}
                                 </span>
                               ) : (
                                 <span className="text-zinc-500">нет нажатия</span>
                               )}
                             </td>
-                            <td className={clsx("px-3 py-3 text-sm font-black", row.guess.hasGuess ? tone.text : "text-zinc-300")}>
+                            <td
+                              className={clsx(
+                                "px-3 py-3 text-sm font-black",
+                                row.guess.hasGuess ? tone.text : "text-zinc-300"
+                              )}
+                            >
                               {row.guess.hasGuess ? (
                                 <>
                                   {row.guess.points}
@@ -1184,7 +1285,8 @@ export default function RoomScreen() {
                 </div>
 
                 <div className="mt-3 text-xs text-zinc-500">
-                  Игроки отсортированы от самого точного к менее точному. Следующий раунд запускается автоматически.
+                  Игроки отсортированы от самого точного к менее точному. Следующий раунд
+                  запускается автоматически.
                 </div>
               </motion.div>
             </motion.div>
@@ -1217,22 +1319,40 @@ export default function RoomScreen() {
 
               <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4">
                 {top3.map((p, idx) => {
-                  const tier = idx === 0 ? "bg-emerald-500/20" : idx === 1 ? "bg-sky-500/20" : "bg-fuchsia-500/20";
+                  const tier =
+                    idx === 0
+                      ? "bg-emerald-500/20"
+                      : idx === 1
+                        ? "bg-sky-500/20"
+                        : "bg-fuchsia-500/20";
                   const border =
-                    idx === 0 ? "border-emerald-400/30" : idx === 1 ? "border-sky-400/30" : "border-fuchsia-400/30";
+                    idx === 0
+                      ? "border-emerald-400/30"
+                      : idx === 1
+                        ? "border-sky-400/30"
+                        : "border-fuchsia-400/30";
                   const stats = playerMetrics[p.player_id];
                   const badges: string[] = [];
-                  if (badgeLeaders?.mostAccurate?.playerId === p.player_id) badges.push("Самый точный");
-                  if (badgeLeaders?.bestStreak?.playerId === p.player_id) badges.push("Лучшая серия");
-                  if (badgeLeaders?.fastestTrigger?.playerId === p.player_id) badges.push("Самый быстрый триггер");
-                  if (badgeLeaders?.roundWinner?.playerId === p.player_id) badges.push("Победитель раундов");
+                  if (badgeLeaders?.mostAccurate?.playerId === p.player_id)
+                    badges.push("Самый точный");
+                  if (badgeLeaders?.bestStreak?.playerId === p.player_id)
+                    badges.push("Лучшая серия");
+                  if (badgeLeaders?.fastestTrigger?.playerId === p.player_id)
+                    badges.push("Самый быстрый триггер");
+                  if (badgeLeaders?.roundWinner?.playerId === p.player_id)
+                    badges.push("Победитель раундов");
                   return (
                     <motion.div
                       key={p.id}
                       className={clsx("rounded-2xl border p-4", tier, border)}
                       initial={{ opacity: 0, y: 14, scale: 0.98 }}
                       animate={{ opacity: 1, y: 0, scale: 1 }}
-                      transition={{ delay: idx * 0.08, type: "spring", stiffness: 220, damping: 18 }}
+                      transition={{
+                        delay: idx * 0.08,
+                        type: "spring",
+                        stiffness: 220,
+                        damping: 18,
+                      }}
                     >
                       <div className="text-xs text-zinc-300 font-black">#{idx + 1}</div>
                       <div className="mt-3">
@@ -1242,7 +1362,10 @@ export default function RoomScreen() {
                       <div className="mt-2 flex flex-wrap gap-1.5">
                         {badges.length ? (
                           badges.map((b) => (
-                            <span key={b} className="text-[10px] px-2 py-1 rounded-full border border-white/20 bg-white/10 text-zinc-100 font-bold">
+                            <span
+                              key={b}
+                              className="text-[10px] px-2 py-1 rounded-full border border-white/20 bg-white/10 text-zinc-100 font-bold"
+                            >
                               {b}
                             </span>
                           ))
@@ -1251,20 +1374,32 @@ export default function RoomScreen() {
                         )}
                       </div>
                       <div className="mt-1 text-sm text-zinc-300">
-                        Лучшая точность: <span className="text-emerald-200 font-semibold">{stats?.bestAbsDeltaMs ?? 0}мс</span>
+                        Лучшая точность:{" "}
+                        <span className="text-emerald-200 font-semibold">
+                          {stats?.bestAbsDeltaMs ?? 0}мс
+                        </span>
                       </div>
                       <div className="mt-1 text-sm text-zinc-300">
                         Средняя точность:{" "}
-                        <span className="text-sky-200 font-semibold">{stats?.avgAbsDeltaMs ?? 0}мс</span>
+                        <span className="text-sky-200 font-semibold">
+                          {stats?.avgAbsDeltaMs ?? 0}мс
+                        </span>
                       </div>
                       <div className="mt-1 text-sm text-zinc-300">
-                        Серия: <span className="text-emerald-200 font-semibold">{p.max_streak}</span>
+                        Серия:{" "}
+                        <span className="text-emerald-200 font-semibold">{p.max_streak}</span>
                       </div>
                       <div className="mt-1 text-sm text-zinc-300">
-                        Побед в раундах: <span className="text-amber-200 font-semibold">{stats?.roundsWon ?? 0}</span>
+                        Побед в раундах:{" "}
+                        <span className="text-amber-200 font-semibold">
+                          {stats?.roundsWon ?? 0}
+                        </span>
                       </div>
                       <div className="mt-1 text-sm text-zinc-300">
-                        Ранних нажатий: <span className="text-rose-200 font-semibold">{stats?.earlyPresses ?? 0}</span>
+                        Ранних нажатий:{" "}
+                        <span className="text-rose-200 font-semibold">
+                          {stats?.earlyPresses ?? 0}
+                        </span>
                       </div>
                     </motion.div>
                   );
@@ -1305,14 +1440,21 @@ export default function RoomScreen() {
                     {sortedByScore.map((p, idx) => {
                       const stats = playerMetrics[p.player_id];
                       return (
-                        <tr key={p.id} className="border-t border-white/5 hover:bg-white/5 transition">
+                        <tr
+                          key={p.id}
+                          className="border-t border-white/5 hover:bg-white/5 transition"
+                        >
                           <td className="px-4 py-3 text-sm font-black text-zinc-300">{idx + 1}</td>
                           <td className="px-4 py-3">
                             <PlayerBadge nickname={p.nickname} avatar={p.avatar} />
                           </td>
                           <td className="px-4 py-3 text-sm font-black">{p.score}</td>
-                          <td className="px-4 py-3 text-sm text-zinc-200">{stats?.avgAbsDeltaMs ?? 0}мс</td>
-                          <td className="px-4 py-3 text-sm text-emerald-200">{stats?.bestAbsDeltaMs ?? 0}мс</td>
+                          <td className="px-4 py-3 text-sm text-zinc-200">
+                            {stats?.avgAbsDeltaMs ?? 0}мс
+                          </td>
+                          <td className="px-4 py-3 text-sm text-emerald-200">
+                            {stats?.bestAbsDeltaMs ?? 0}мс
+                          </td>
                           <td className="px-4 py-3 text-sm text-zinc-200">{p.max_streak}</td>
                         </tr>
                       );
@@ -1351,8 +1493,12 @@ export default function RoomScreen() {
               <div className="mt-6 rounded-2xl border border-white/10 bg-gradient-to-br from-emerald-500/15 to-cyan-500/10 p-4 md:p-5">
                 <div className="flex items-start justify-between gap-3">
                   <div>
-                    <div className="text-xs uppercase text-zinc-300 tracking-wide">Карточка результата</div>
-                    <div className="text-xl md:text-2xl font-black mt-1">{myParticipant?.nickname ?? "Игрок"}</div>
+                    <div className="text-xs uppercase text-zinc-300 tracking-wide">
+                      Карточка результата
+                    </div>
+                    <div className="text-xl md:text-2xl font-black mt-1">
+                      {myParticipant?.nickname ?? "Игрок"}
+                    </div>
                     <div className="text-sm text-zinc-300 mt-1">{shareSlogan}</div>
                   </div>
                   <div className="text-right">
@@ -1417,32 +1563,50 @@ export default function RoomScreen() {
 
                 <div className="mt-4 grid grid-cols-2 md:grid-cols-4 gap-2.5">
                   <div className="rounded-xl border border-emerald-400/30 bg-emerald-500/10 px-3 py-2">
-                    <div className="text-[11px] uppercase tracking-wide text-zinc-400">Best delta</div>
+                    <div className="text-[11px] uppercase tracking-wide text-zinc-400">
+                      Best delta
+                    </div>
                     <div className="text-sm font-black text-emerald-200">
                       {myHistorySummary.bestDelta != null ? `${myHistorySummary.bestDelta}ms` : "—"}
                     </div>
                   </div>
                   <div className="rounded-xl border border-sky-400/30 bg-sky-500/10 px-3 py-2">
-                    <div className="text-[11px] uppercase tracking-wide text-zinc-400">Average delta</div>
+                    <div className="text-[11px] uppercase tracking-wide text-zinc-400">
+                      Average delta
+                    </div>
                     <div className="text-sm font-black text-sky-200">
                       {myHistorySummary.avgDelta != null ? `${myHistorySummary.avgDelta}ms` : "—"}
                     </div>
                   </div>
                   <div className="rounded-xl border border-white/15 bg-white/5 px-3 py-2">
-                    <div className="text-[11px] uppercase tracking-wide text-zinc-400">Общий счет</div>
+                    <div className="text-[11px] uppercase tracking-wide text-zinc-400">
+                      Общий счет
+                    </div>
                     <div className="text-sm font-black text-white">{myParticipant?.score ?? 0}</div>
                   </div>
                   <div className="rounded-xl border border-amber-400/30 bg-amber-500/10 px-3 py-2">
-                    <div className="text-[11px] uppercase tracking-wide text-zinc-400">Best streak</div>
-                    <div className="text-sm font-black text-amber-200">{myParticipant?.max_streak ?? 0}</div>
+                    <div className="text-[11px] uppercase tracking-wide text-zinc-400">
+                      Best streak
+                    </div>
+                    <div className="text-sm font-black text-amber-200">
+                      {myParticipant?.max_streak ?? 0}
+                    </div>
                   </div>
                   <div className="rounded-xl border border-rose-400/30 bg-rose-500/10 px-3 py-2">
-                    <div className="text-[11px] uppercase tracking-wide text-zinc-400">Ранние нажатия</div>
-                    <div className="text-sm font-black text-rose-200">{myHistorySummary.earlyPresses}</div>
+                    <div className="text-[11px] uppercase tracking-wide text-zinc-400">
+                      Ранние нажатия
+                    </div>
+                    <div className="text-sm font-black text-rose-200">
+                      {myHistorySummary.earlyPresses}
+                    </div>
                   </div>
                   <div className="rounded-xl border border-violet-400/30 bg-violet-500/10 px-3 py-2">
-                    <div className="text-[11px] uppercase tracking-wide text-zinc-400">Побед в раундах</div>
-                    <div className="text-sm font-black text-violet-200">{playerMetrics[playerId ?? ""]?.roundsWon ?? 0}</div>
+                    <div className="text-[11px] uppercase tracking-wide text-zinc-400">
+                      Побед в раундах
+                    </div>
+                    <div className="text-sm font-black text-violet-200">
+                      {playerMetrics[playerId ?? ""]?.roundsWon ?? 0}
+                    </div>
                   </div>
                 </div>
 
@@ -1468,16 +1632,29 @@ export default function RoomScreen() {
                         const isEarly = !!g && g.delta_ms < 0;
                         return (
                           <tr key={item.round.id} className="border-t border-white/5">
-                            <td className="px-3 py-3 text-sm font-semibold text-zinc-300">#{item.round.round_number}</td>
+                            <td className="px-3 py-3 text-sm font-semibold text-zinc-300">
+                              #{item.round.round_number}
+                            </td>
                             <td className="px-3 py-3 text-sm text-zinc-100">{item.round.title}</td>
-                            <td className="px-3 py-3 text-sm text-zinc-200">{formatMs(item.round.event_time_ms)}</td>
-                            <td className="px-3 py-3 text-sm text-zinc-200">{g ? formatMs(g.press_time_ms) : "—"}</td>
+                            <td className="px-3 py-3 text-sm text-zinc-200">
+                              {formatMs(item.round.event_time_ms)}
+                            </td>
+                            <td className="px-3 py-3 text-sm text-zinc-200">
+                              {g ? formatMs(g.press_time_ms) : "—"}
+                            </td>
                             <td className={clsx("px-3 py-3 text-sm font-semibold", tone.text)}>
                               {g ? formatMs(g.delta_ms) : "—"}
                             </td>
-                            <td className={clsx("px-3 py-3 text-sm font-black", tone.text)}>{g ? g.points : 0}</td>
+                            <td className={clsx("px-3 py-3 text-sm font-black", tone.text)}>
+                              {g ? g.points : 0}
+                            </td>
                             <td className="px-3 py-3">
-                              <span className={clsx("text-[11px] px-2 py-1 rounded-full border font-bold", tone.pill)}>
+                              <span
+                                className={clsx(
+                                  "text-[11px] px-2 py-1 rounded-full border font-bold",
+                                  tone.pill
+                                )}
+                              >
                                 {g ? (isEarly ? "Слишком рано" : label) : "Момент пропущен"}
                               </span>
                             </td>
@@ -1495,22 +1672,39 @@ export default function RoomScreen() {
                     const result = classifyResult(g?.delta_ms);
                     const tone = toneClasses(result.tone);
                     return (
-                      <div key={item.round.id} className="rounded-xl border border-white/10 bg-white/5 p-3">
+                      <div
+                        key={item.round.id}
+                        className="rounded-xl border border-white/10 bg-white/5 p-3"
+                      >
                         <div className="flex items-center justify-between gap-2">
-                          <div className="text-sm font-black">#{item.round.round_number} {item.round.title}</div>
-                          <span className={clsx("text-[11px] px-2 py-1 rounded-full border font-bold", tone.pill)}>
+                          <div className="text-sm font-black">
+                            #{item.round.round_number} {item.round.title}
+                          </div>
+                          <span
+                            className={clsx(
+                              "text-[11px] px-2 py-1 rounded-full border font-bold",
+                              tone.pill
+                            )}
+                          >
                             {g ? result.label : "Момент пропущен"}
                           </span>
                         </div>
                         <div className="mt-2 grid grid-cols-2 gap-2 text-xs">
                           <div className="text-zinc-400">
-                            Факт: <span className="text-zinc-200 font-semibold">{formatMs(item.round.event_time_ms)}</span>
+                            Факт:{" "}
+                            <span className="text-zinc-200 font-semibold">
+                              {formatMs(item.round.event_time_ms)}
+                            </span>
                           </div>
                           <div className="text-zinc-400">
-                            Нажатие: <span className="text-zinc-200 font-semibold">{g ? formatMs(g.press_time_ms) : "—"}</span>
+                            Нажатие:{" "}
+                            <span className="text-zinc-200 font-semibold">
+                              {g ? formatMs(g.press_time_ms) : "—"}
+                            </span>
                           </div>
                           <div className={clsx("text-zinc-400", tone.text)}>
-                            Отклонение: <span className="font-semibold">{g ? formatMs(g.delta_ms) : "—"}</span>
+                            Отклонение:{" "}
+                            <span className="font-semibold">{g ? formatMs(g.delta_ms) : "—"}</span>
                           </div>
                           <div className={clsx("text-zinc-400", tone.text)}>
                             Очки: <span className="font-black">{g ? g.points : 0}</span>
@@ -1528,4 +1722,3 @@ export default function RoomScreen() {
     </div>
   );
 }
-

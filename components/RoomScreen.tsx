@@ -403,12 +403,26 @@ export default function RoomScreen() {
         setSubmitMessage("Ответ принят. Ожидаем результат раунда.");
       } else if (normalized.includes("round_not_running")) {
         setSubmitMessage("Раунд уже завершен или еще не начался.");
+      } else if (normalized.includes("round_not_ready")) {
+        setSubmitMessage("Раунд ещё не готов на сервере. Подождите секунду и попробуйте снова.");
+      } else if (normalized.includes("round_not_found")) {
+        setSubmitMessage("Раунд не найден. Обновите страницу.");
       } else if (normalized.includes("too_late")) {
         setSubmitMessage("Слишком поздно: окно раунда закрыто.");
       } else if (normalized.includes("participant_not_in_room")) {
         setSubmitMessage("Игрок не найден в текущей комнате.");
+      } else if (
+        normalized.includes("permission denied") ||
+        normalized.includes("42501") ||
+        normalized.includes("execute permission")
+      ) {
+        setSubmitMessage(
+          "Нет прав на серверную функцию в Supabase. Выполните GRANT на submit_guess_server для роли anon (см. schema.sql)."
+        );
       } else {
-        setSubmitMessage("Не удалось отправить нажатие. Проверьте соединение и попробуйте снова.");
+        setSubmitMessage(
+          `Не удалось отправить нажатие: ${raw.slice(0, 120)}${raw.length > 120 ? "…" : ""}`
+        );
       }
     } finally {
       setSubmittingGuess(false);

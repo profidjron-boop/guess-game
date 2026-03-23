@@ -542,6 +542,16 @@ to anon, authenticated
 using (true);
 
 -----------------------
+-- RPC: allow browser clients (anon) to call server functions
+-----------------------
+-- Without these, supabase.rpc(...) from the Next.js app can fail with
+-- "permission denied for function" while Realtime still looks "connected".
+grant execute on function public.compute_base_points(integer) to anon, authenticated;
+grant execute on function public.apply_round_results(uuid, uuid) to anon, authenticated;
+grant execute on function public.finalize_game(uuid) to anon, authenticated;
+grant execute on function public.submit_guess_server(uuid, uuid, uuid) to anon, authenticated;
+
+-----------------------
 -- Recommended: set FK constraints
 -----------------------
 -- (Already defined with REFERENCES ... ON DELETE CASCADE)

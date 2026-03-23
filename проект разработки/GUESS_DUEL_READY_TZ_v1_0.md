@@ -1,47 +1,53 @@
-# GUESS_DUEL_READY_TZ_v1_0
+# GUESS_DUEL_READY_TZ_v1_1
 
-Version: v1.0  
+Version: v1.1  
 Date: 2026-03-23  
 Project: Guess Duel
 
 ---
 
 ## 1) Ready scope (in)
-- Next.js 14 App Router + TS + Tailwind
-- Supabase Postgres (rooms/participants/rounds/guesses/leaderboard) + Realtime sync
-- Механика игры: 5 раундов, кнопка `СЕЙЧАС!` одна нажатие за раунд, победитель раунда по min abs delta, серия/множители
+
+- Next.js 16 App Router + TS + Tailwind
+- Supabase Postgres (rooms/participants/rounds/guesses/leaderboard + match-centric extensions) + Realtime sync
+- Механика игры: 5 раундов, кнопка `СЕЙЧАС!` одна нажатие за раунд, победитель раунда по min abs delta, серия/множители (server-authoritative)
 - Screens:
-  - Лобби (ник + аватар, rooms list, create/join, localStorage профиля)
+  - Каталог матчей (фильтры, статусы, карточки матчей, onboarding)
+  - Страница матча (выбор команды и события, запуск комнаты по матчу)
+  - Лобби (legacy route `/lobby` сохранен)
   - Комната ожидания (код, invite link, онлайн участники, host badge, ready toggle, host start)
-  - Игровой экран (таймер + анимация, событие, крупная кнопка, realtime таблица игроков)
-  - Экран результатов раунда (event time, press time, delta, points, winner highlight, плавный переход)
-  - Итоговый экран (top-3 анимация, полная таблица, точность, серия, кнопки “Новая игра”/“В лобби”)
+  - Игровой экран (match/league/team/event context + таймер + кнопка + realtime таблица)
+  - Экран результатов раунда (привязан к матчу/событию/команде)
+  - Итоговый экран (match-centric summary + история раундов + share card)
   - Глобальный leaderboard (top-20, фильтр спорт/киберспорт/все)
 
 ---
 
 ## 2) Ready evidence pointers (what to verify before release)
-1) Realtime:
-   - изменения rooms/participants/rounds видны во всех вкладках
-2) Round flow:
+
+1. Match flow:
+   - `/` открывает каталог матчей, фильтры и поиск работают
+   - `/match/[slug]` показывает матч, выбор стороны и событие
+2. Room/game context:
+   - в комнате и игре видны Match/League/Event/Selected team
+   - в списке участников отображается выбранная команда
+3. Core mechanics:
    - host стартует игру только в status `waiting`
-   - в каждом раунде кнопка блокируется после первого нажатия у конкретного игрока
+   - в каждом раунде кнопка блокируется после первого нажатия
    - после каждого раунда показывается modal с расчётами
-3) Scoring:
-   - base points по таблице delta windows соблюдены
-   - штраф за ранний клик: delta_ms < 0 => -100
-   - streak/multiplier: 2 подряд => x1.5, 3+ => x2
-4) Winner:
+4. Scoring/winner:
+   - base points + penalty + streak multipliers соответствуют формуле
    - победитель по минимальному |delta_ms|
 
 ---
 
 ## 3) Pending / follow-ups (deferred)
-1) Добавить automated e2e/regression тесты для ключевых сценариев (см. `GUESS_DUEL_TEST_STRATEGY_PACK_v1_0.md`).
-2) Завершить release evidence: staging/prod URL + smoke-check артефакты после деплоя.
-3) Применить `supabase/schema.sql` в целевом Supabase окружении (если ещё не применено).
+
+1. Расширить automated e2e/regression тесты на fan-flow (`matches -> match -> room -> rounds`).
+2. Добавить live-stream iframe и live match API интеграцию (future scope).
 
 ## 4) Closed in v1.0
+
 - Strict серверная валидация клика реализована через `submit_guess_server` (press/delta считаются на стороне БД).
 - RLS policies для guest-mode добавлены в `supabase/schema.sql`.
-
+- Match-centric schema extension применена в `supabase/schema.sql`.

@@ -1,34 +1,39 @@
-# GUESS_DUEL_EPIC_PACK_03_UI_GAME_MECHANICS_v1_0
+# GUESS_DUEL_EPIC_PACK_03_UI_GAME_MECHANICS_v1_1
 
 Objective (UI + game mechanics):
-- реализовать обязательные экраны и реальную механику раундов.
+
+- реализовать fan-centric second-screen UX и реальную механику раундов.
 
 Deliverables:
-1) Lobby
-   - ник + аватар
-   - create/join room
-   - localStorage профиля
-2) Waiting room
-   - code + invite link
+
+1. Match entry flow
+   - список матчей с фильтрами/поиском
+   - страница матча
+   - выбор команды и события
+   - create/join room по матчу
+2. Waiting room
+   - code + invite link + match/event context
    - online participants list
    - host badge
    - ready state
    - only host can start
-3) Gameplay
+   - selected team у каждого участника
+3. Gameplay
    - countdown timer + progress bar
-   - событие title + категория
+   - событие title + категория + match + league + selected team
    - big button `СЕЙЧАС!` (lock after press)
    - realtime scoreboard
-4) Round results modal
-   - event time, press time, delta ms, points
+4. Round results modal
+   - event time, press time, delta ms, points + match/event context
    - highlight winner
-5) Final screen
-   - animated top-3
-   - full table + accuracy stats + streak
+5. Final screen
+   - animated top-3 + match summary
+   - full table + accuracy stats + streak + round history
 
 Status:
+
 - implemented in `components/` + routes under `app/`.
 
 Notes:
-- delta/press_time считаются на клиенте (в прод-режиме можно усилить серверным вычислением).
 
+- delta/press_time считаются серверно через RPC `submit_guess_server`.

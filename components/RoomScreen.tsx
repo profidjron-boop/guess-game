@@ -832,13 +832,13 @@ export default function RoomScreen() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-black to-zinc-950 text-foreground">
+    <div className="min-h-screen bg-gradient-to-b from-slate-900 via-slate-800 to-slate-700 text-zinc-100">
       <div className="max-w-5xl mx-auto px-4 py-6">
         <div className="flex items-center justify-between gap-3">
           <div className="flex items-center gap-3">
             <Link
               href="/"
-              className="px-3 py-2 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 transition text-sm font-semibold"
+              className="px-3 py-2 rounded-xl border border-white/30 bg-white/20 hover:bg-white/30 transition text-sm font-semibold text-white"
             >
               Лобби
             </Link>
@@ -896,16 +896,16 @@ export default function RoomScreen() {
         {/* WAITING ROOM */}
         {room.status === "waiting" ? (
           <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-5">
-            <div className="rounded-2xl border border-white/10 bg-white/5 p-4 md:p-5">
+            <div className="rounded-2xl border border-white/20 bg-white/12 p-4 md:p-5">
               <div className="text-lg font-bold">Ожидание старта</div>
 
               <div className="mt-4 space-y-3">
-                <div className="p-3 rounded-xl border border-white/10 bg-black/20">
+                <div className="p-3 rounded-xl border border-white/20 bg-white/10">
                   <div className="text-xs text-zinc-400">Код комнаты</div>
                   <div className="text-2xl font-black tracking-tight">{room.code}</div>
                 </div>
 
-                <div className="p-3 rounded-xl border border-white/10 bg-black/20">
+                <div className="p-3 rounded-xl border border-white/20 bg-white/10">
                   <div className="text-xs text-zinc-400">Приглашение</div>
                   <div className="text-sm font-semibold break-all">{inviteLink}</div>
                   <button
@@ -962,7 +962,7 @@ export default function RoomScreen() {
               </div>
             </div>
 
-            <div className="rounded-2xl border border-white/10 bg-white/5 p-4 md:p-5">
+            <div className="rounded-2xl border border-white/20 bg-white/12 p-4 md:p-5">
               <div className="flex items-center justify-between">
                 <div className="text-lg font-bold">Участники</div>
                 <div className="text-xs text-zinc-500">{participants.length} онлайн</div>
@@ -973,7 +973,7 @@ export default function RoomScreen() {
                   <div
                     key={p.id}
                     className={clsx(
-                      "flex items-center justify-between gap-3 p-3 rounded-xl border border-white/10 bg-black/20",
+                      "flex items-center justify-between gap-3 p-3 rounded-xl border border-white/20 bg-white/10",
                       p.player_id === room.host_id ? "border-emerald-400/30" : ""
                     )}
                   >
@@ -1005,7 +1005,7 @@ export default function RoomScreen() {
         {/* PLAYING */}
         {room.status === "playing" && runningRound && myParticipant ? (
           <div className="mt-6 grid grid-cols-1 lg:grid-cols-3 gap-5">
-            <div className="lg:col-span-2 rounded-2xl border border-white/10 bg-white/5 p-4 md:p-5">
+            <div className="lg:col-span-2 rounded-2xl border border-white/20 bg-white/12 p-4 md:p-5">
               <div className="flex items-start justify-between gap-4">
                 <div>
                   <div className="text-xs text-zinc-400">Текущий раунд</div>
@@ -1088,7 +1088,7 @@ export default function RoomScreen() {
               ) : null}
             </div>
 
-            <div className="rounded-2xl border border-white/10 bg-white/5 p-4 md:p-5">
+            <div className="rounded-2xl border border-white/20 bg-white/12 p-4 md:p-5">
               <div className="text-lg font-bold">Турнирная таблица</div>
               <div className="text-xs text-zinc-500 mt-1">Очки обновляются realtime</div>
 
@@ -1097,7 +1097,7 @@ export default function RoomScreen() {
                   <div
                     key={p.id}
                     className={clsx(
-                      "flex items-center justify-between gap-3 p-3 rounded-xl border border-white/10 bg-black/20",
+                      "flex items-center justify-between gap-3 p-3 rounded-xl border border-white/20 bg-white/10",
                       p.player_id === room.host_id ? "border-emerald-400/25" : "",
                       idx < 3 ? "bg-white/7" : ""
                     )}
@@ -1136,7 +1136,7 @@ export default function RoomScreen() {
                 }}
               />
               <motion.div
-                className="relative w-full max-w-3xl rounded-3xl border border-white/10 bg-zinc-950/90 backdrop-blur p-4 md:p-6 overflow-hidden"
+                className="relative w-full max-w-3xl rounded-3xl border border-white/20 bg-slate-900/95 backdrop-blur p-4 md:p-6 overflow-hidden"
                 initial={{ y: 12, scale: 0.98 }}
                 animate={{ y: 0, scale: 1 }}
                 exit={{ y: 8, scale: 0.98 }}
@@ -1297,7 +1297,7 @@ export default function RoomScreen() {
         {room.status === "finished" ? (
           <div className="mt-6">
             <motion.div
-              className="rounded-3xl border border-white/10 bg-white/5 p-4 md:p-6"
+              className="rounded-3xl border border-white/20 bg-white/12 p-4 md:p-6"
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.25 }}
@@ -1406,7 +1406,7 @@ export default function RoomScreen() {
                 })}
               </div>
 
-              <div className="mt-4 rounded-2xl border border-white/10 bg-black/20 p-3.5">
+              <div className="mt-4 rounded-2xl border border-white/20 bg-white/10 p-3.5">
                 <div className="text-xs uppercase text-zinc-400">Глобальные бейджи матча</div>
                 <div className="mt-2 flex flex-wrap gap-2">
                   <span className="text-xs px-2 py-1 rounded-full border border-emerald-400/30 bg-emerald-500/10 text-emerald-200">
@@ -1490,7 +1490,7 @@ export default function RoomScreen() {
                 </button>
               </div>
 
-              <div className="mt-6 rounded-2xl border border-white/10 bg-gradient-to-br from-emerald-500/15 to-cyan-500/10 p-4 md:p-5">
+              <div className="mt-6 rounded-2xl border border-white/20 bg-gradient-to-br from-emerald-500/20 to-cyan-500/15 p-4 md:p-5">
                 <div className="flex items-start justify-between gap-3">
                   <div>
                     <div className="text-xs uppercase text-zinc-300 tracking-wide">
@@ -1508,23 +1508,23 @@ export default function RoomScreen() {
                 </div>
 
                 <div className="mt-4 grid grid-cols-2 md:grid-cols-4 gap-2.5 text-sm">
-                  <div className="rounded-xl border border-white/15 bg-black/25 px-3 py-2">
+                  <div className="rounded-xl border border-white/25 bg-white/15 px-3 py-2">
                     <div className="text-[11px] text-zinc-400 uppercase">Общий счет</div>
                     <div className="font-black text-white">{myParticipant?.score ?? 0}</div>
                   </div>
-                  <div className="rounded-xl border border-white/15 bg-black/25 px-3 py-2">
+                  <div className="rounded-xl border border-white/25 bg-white/15 px-3 py-2">
                     <div className="text-[11px] text-zinc-400 uppercase">Лучшая точность</div>
                     <div className="font-black text-emerald-200">
                       {myHistorySummary.bestDelta != null ? `${myHistorySummary.bestDelta}мс` : "—"}
                     </div>
                   </div>
-                  <div className="rounded-xl border border-white/15 bg-black/25 px-3 py-2">
+                  <div className="rounded-xl border border-white/25 bg-white/15 px-3 py-2">
                     <div className="text-[11px] text-zinc-400 uppercase">Средняя точность</div>
                     <div className="font-black text-sky-200">
                       {myHistorySummary.avgDelta != null ? `${myHistorySummary.avgDelta}мс` : "—"}
                     </div>
                   </div>
-                  <div className="rounded-xl border border-white/15 bg-black/25 px-3 py-2">
+                  <div className="rounded-xl border border-white/25 bg-white/15 px-3 py-2">
                     <div className="text-[11px] text-zinc-400 uppercase">Категория</div>
                     <div className="font-black text-zinc-100">{categoryRuLabel(myCategory)}</div>
                   </div>
@@ -1548,7 +1548,7 @@ export default function RoomScreen() {
                 </div>
               </div>
 
-              <div className="mt-6 rounded-2xl border border-white/10 bg-black/20 p-4 md:p-5">
+              <div className="mt-6 rounded-2xl border border-white/20 bg-white/10 p-4 md:p-5">
                 <div className="flex items-center justify-between gap-3">
                   <div>
                     <div className="text-lg font-bold">История раундов</div>

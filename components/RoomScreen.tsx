@@ -91,6 +91,11 @@ function connStatusLabel(status: "connected" | "reconnecting" | "disconnected") 
   return "отключено";
 }
 
+function categoryRuLabel(value: "sport" | "cyber" | null) {
+  if (!value) return "Смешанная";
+  return value === "sport" ? "Спорт" : "Киберспорт";
+}
+
 export default function RoomScreen() {
   const router = useRouter();
   const params = useParams<{ code: string }>();
@@ -529,6 +534,7 @@ export default function RoomScreen() {
   const [finalStatsLoaded, setFinalStatsLoaded] = useState(false);
   const [playerMetrics, setPlayerMetrics] = useState<Record<string, PlayerMetrics>>({});
   const [myRoundHistory, setMyRoundHistory] = useState<MyRoundHistoryRow[]>([]);
+  const [copiedResult, setCopiedResult] = useState(false);
 
   useEffect(() => {
     const loadFinalStats = async () => {
@@ -647,6 +653,94 @@ export default function RoomScreen() {
       guessedCount: guessed.length,
     };
   }, [myRoundHistory]);
+
+  const myCategory = useMemo(() => {
+    const categories = myRoundHistory.map((r) => r.round.category);
+    if (!categories.length) return null;
+    const sport = categories.filter((c) => c === "sport").length;
+    const cyber = categories.filter((c) => c === "cyber").length;
+    if (sport === cyber) return null;
+    return sport > cyber ? "sport" : "cyber";
+  }, [myRoundHistory]);
+
+  const myPlace = useMemo(() => {
+    if (!myParticipant) return null;
+    const idx = sortedByScore.findIndex((p) => p.player_id === myParticipant.player_id);
+    return idx >= 0 ? idx + 1 : null;
+  }, [sortedByScore, myParticipant]);
+
+  const shareSlogan = useMemo(() => {
+    if (!myPlace) return "Top timing performance";
+    if (myPlace === 1) return "Sharpest reaction in the room";
+    if (myHistorySummary.bestDelta != null && myHistorySummary.bestDelta <= 500) return "Nailed the moment";
+    return "Top timing performance";
+  }, [myPlace, myHistorySummary.bestDelta]);
+
+  const shareText = useMemo(() => {
+    return [
+      "Guess Duel — мой результат",
+      `Игрок: ${myParticipant?.nickname ?? "Игрок"}`,
+      `Место: ${myPlace ?? "—"}`,
+      `Счет: ${myParticipant?.score ?? 0}`,
+      `Лучшая точность: ${myHistorySummary.bestDelta != null ? `${myHistorySummary.bestDelta}ms` : "—"}`,
+      `Средняя точность: ${myHistorySummary.avgDelta != null ? `${myHistorySummary.avgDelta}ms` : "—"}`,
+      `Категория: ${categoryRuLabel(myCategory)}`,
+      `Слоган: ${shareSlogan}`,
+    ].join("\n");
+  }, [myParticipant?.nickname, myParticipant?.score, myPlace, myHistorySummary.bestDelta, myHistorySummary.avgDelta, myCategory, shareSlogan]);
+
+  const copyResult = async () => {
+    try {
+      await navigator.clipboard.writeText(shareText);
+      setCopiedResult(true);
+      setTimeout(() => setCopiedResult(false), 1800);
+    } catch {
+      setCopiedResult(false);
+    }
+  };
+
+  const downloadResultImage = () => {
+    const nickname = (myParticipant?.nickname ?? "Игрок").replace(/[<>&"]/g, "");
+    const line1 = `#${myPlace ?? "—"} • ${nickname}`;
+    const line2 = `Score: ${myParticipant?.score ?? 0}`;
+    const line3 = `Best: ${myHistorySummary.bestDelta != null ? `${myHistorySummary.bestDelta}ms` : "—"}  Avg: ${
+      myHistorySummary.avgDelta != null ? `${myHistorySummary.avgDelta}ms` : "—"
+    }`;
+    const line4 = `Category: ${categoryRuLabel(myCategory)}  •  ${shareSlogan}`;
+
+    const svg = `
+<svg xmlns="http://www.w3.org/2000/svg" width="1080" height="1080" viewBox="0 0 1080 1080">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#0f172a"/>
+      <stop offset="100%" stop-color="#111827"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#10b981"/>
+      <stop offset="100%" stop-color="#22d3ee"/>
+    </linearGradient>
+  </defs>
+  <rect width="1080" height="1080" fill="url(#bg)"/>
+  <rect x="70" y="70" width="940" height="940" rx="42" fill="#0b1220" stroke="#1f2937" stroke-width="3"/>
+  <text x="120" y="170" fill="#22d3ee" font-size="44" font-family="Inter,Arial,sans-serif" font-weight="700">Guess Duel</text>
+  <rect x="120" y="200" width="840" height="8" rx="4" fill="url(#accent)"/>
+  <text x="120" y="300" fill="#e5e7eb" font-size="62" font-family="Inter,Arial,sans-serif" font-weight="800">${line1}</text>
+  <text x="120" y="390" fill="#10b981" font-size="74" font-family="Inter,Arial,sans-serif" font-weight="900">${line2}</text>
+  <text x="120" y="470" fill="#cbd5e1" font-size="40" font-family="Inter,Arial,sans-serif" font-weight="600">${line3}</text>
+  <text x="120" y="560" fill="#f8fafc" font-size="36" font-family="Inter,Arial,sans-serif" font-weight="700">${line4}</text>
+  <text x="120" y="900" fill="#94a3b8" font-size="30" font-family="Inter,Arial,sans-serif">Нажми вовремя. Забери первое место.</text>
+</svg>`;
+
+    const blob = new Blob([svg], { type: "image/svg+xml;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `guess-duel-result-${myParticipant?.nickname ?? "player"}.svg`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  };
 
   const badgeLeaders = useMemo(() => {
     if (!participants.length) return null;
@@ -1251,6 +1345,60 @@ export default function RoomScreen() {
                 >
                   Вернуться в лобби
                 </button>
+              </div>
+
+              <div className="mt-6 rounded-2xl border border-white/10 bg-gradient-to-br from-emerald-500/15 to-cyan-500/10 p-4 md:p-5">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <div className="text-xs uppercase text-zinc-300 tracking-wide">Карточка результата</div>
+                    <div className="text-xl md:text-2xl font-black mt-1">{myParticipant?.nickname ?? "Игрок"}</div>
+                    <div className="text-sm text-zinc-300 mt-1">{shareSlogan}</div>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-xs text-zinc-400">Финальная позиция</div>
+                    <div className="text-3xl font-black text-emerald-200">#{myPlace ?? "—"}</div>
+                  </div>
+                </div>
+
+                <div className="mt-4 grid grid-cols-2 md:grid-cols-4 gap-2.5 text-sm">
+                  <div className="rounded-xl border border-white/15 bg-black/25 px-3 py-2">
+                    <div className="text-[11px] text-zinc-400 uppercase">Total score</div>
+                    <div className="font-black text-white">{myParticipant?.score ?? 0}</div>
+                  </div>
+                  <div className="rounded-xl border border-white/15 bg-black/25 px-3 py-2">
+                    <div className="text-[11px] text-zinc-400 uppercase">Best accuracy</div>
+                    <div className="font-black text-emerald-200">
+                      {myHistorySummary.bestDelta != null ? `${myHistorySummary.bestDelta}ms` : "—"}
+                    </div>
+                  </div>
+                  <div className="rounded-xl border border-white/15 bg-black/25 px-3 py-2">
+                    <div className="text-[11px] text-zinc-400 uppercase">Average accuracy</div>
+                    <div className="font-black text-sky-200">
+                      {myHistorySummary.avgDelta != null ? `${myHistorySummary.avgDelta}ms` : "—"}
+                    </div>
+                  </div>
+                  <div className="rounded-xl border border-white/15 bg-black/25 px-3 py-2">
+                    <div className="text-[11px] text-zinc-400 uppercase">Category</div>
+                    <div className="font-black text-zinc-100">{categoryRuLabel(myCategory)}</div>
+                  </div>
+                </div>
+
+                <div className="mt-4 flex flex-col sm:flex-row gap-2.5">
+                  <button
+                    type="button"
+                    onClick={copyResult}
+                    className="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-white/15 hover:bg-white/20 border border-white/20 font-bold transition"
+                  >
+                    {copiedResult ? "Скопировано" : "Copy Result"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={downloadResultImage}
+                    className="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-emerald-500 text-black hover:bg-emerald-400 font-bold transition"
+                  >
+                    Download Image
+                  </button>
+                </div>
               </div>
 
               <div className="mt-6 rounded-2xl border border-white/10 bg-black/20 p-4 md:p-5">

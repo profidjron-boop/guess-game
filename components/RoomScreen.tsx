@@ -283,7 +283,7 @@ export default function RoomScreen() {
       setMyGuess((data ?? null) as Guess | null);
     };
     loadMyGuess();
-  }, [room?.id, runningRound?.id, playerId]);
+  }, [room, runningRound, playerId]);
 
   const [roundModal, setRoundModal] = useState<{ round: Round; key: string } | null>(null);
   const [roundResults, setRoundResults] = useState<RoundResultsRow[]>([]);
@@ -304,7 +304,7 @@ export default function RoomScreen() {
     if (runningRound.round_number > roundModal.round.round_number) {
       setRoundModal(null);
     }
-  }, [runningRound?.round_number, roundModal]);
+  }, [runningRound, roundModal]);
 
   useEffect(() => {
     const loadRoundResults = async () => {
@@ -536,12 +536,13 @@ export default function RoomScreen() {
   const [myRoundHistory, setMyRoundHistory] = useState<MyRoundHistoryRow[]>([]);
   const [copiedResult, setCopiedResult] = useState(false);
 
+  // Clear cached final stats when room leaves "finished" state.
   useEffect(() => {
-    const loadFinalStats = async () => {
-      if (!room || room.status !== "finished" || !finalStatsLoaded) return;
-    };
-    loadFinalStats();
-  }, [room, finalStatsLoaded]);
+    if (room?.status === "finished") return;
+    setFinalStatsLoaded(false);
+    setPlayerMetrics({});
+    setMyRoundHistory([]);
+  }, [room?.id, room?.status]);
 
   useEffect(() => {
     const loadStats = async () => {
@@ -591,7 +592,7 @@ export default function RoomScreen() {
       setFinalStatsLoaded(true);
     };
     loadStats();
-  }, [room?.status, room?.id, participants, rounds, finalStatsLoaded]);
+  }, [room, participants, rounds, finalStatsLoaded]);
 
   useEffect(() => {
     const loadMyHistory = async () => {
@@ -632,7 +633,7 @@ export default function RoomScreen() {
     };
 
     loadMyHistory();
-  }, [room?.id, room?.status, playerId]);
+  }, [room, playerId]);
 
   const sortedByScore = useMemo(() => {
     return [...participants].sort((a, b) => b.score - a.score);

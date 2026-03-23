@@ -163,7 +163,7 @@ export default function LobbyScreen() {
       <div className="max-w-5xl mx-auto px-4 py-5 md:py-8">
         <div className="flex items-center justify-between gap-3 mb-4">
           <div>
-            <div className="text-xl md:text-2xl font-black tracking-tight">Guess Duel</div>
+            <div className="text-xl md:text-2xl font-black tracking-tight">Дуэль тайминга</div>
             <div className="text-xs md:text-sm text-zinc-400">Мультиплеерная дуэль точности по таймингу событий.</div>
           </div>
           <a

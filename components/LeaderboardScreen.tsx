@@ -8,7 +8,7 @@ import PlayerBadge from "@/components/PlayerBadge";
 
 function formatMs(value: number | null | undefined) {
   if (value == null) return "—";
-  return `${value} ms`;
+  return `${value} мс`;
 }
 
 function formatPlayedAt(iso: string) {
@@ -78,7 +78,7 @@ export default function LeaderboardScreen() {
         <div className="flex items-center justify-between gap-3">
           <div>
             <div className="text-2xl font-black tracking-tight">Глобальные лидеры</div>
-            <div className="text-sm text-zinc-400">Top-20 по сумме очков и точности по всем сыгранным матчам.</div>
+            <div className="text-sm text-zinc-400">Топ-20 по сумме очков и точности по всем сыгранным матчам.</div>
           </div>
           <a
             href="/"

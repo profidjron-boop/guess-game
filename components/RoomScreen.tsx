@@ -36,7 +36,7 @@ type PlayerMetrics = {
 function formatMs(ms: number | null | undefined) {
   if (ms == null) return "—";
   const sign = ms > 0 ? "+" : "";
-  return `${sign}${ms} ms`;
+  return `${sign}${ms} мс`;
 }
 
 type ResultTone = "perfect" | "great" | "close" | "poor" | "early";
@@ -670,20 +670,20 @@ export default function RoomScreen() {
   }, [sortedByScore, myParticipant]);
 
   const shareSlogan = useMemo(() => {
-    if (!myPlace) return "Top timing performance";
-    if (myPlace === 1) return "Sharpest reaction in the room";
-    if (myHistorySummary.bestDelta != null && myHistorySummary.bestDelta <= 500) return "Nailed the moment";
-    return "Top timing performance";
+    if (!myPlace) return "Максимальная точность тайминга";
+    if (myPlace === 1) return "Самая острая реакция в комнате";
+    if (myHistorySummary.bestDelta != null && myHistorySummary.bestDelta <= 500) return "Идеально поймал момент";
+    return "Топовый тайминг";
   }, [myPlace, myHistorySummary.bestDelta]);
 
   const shareText = useMemo(() => {
     return [
-      "Guess Duel — мой результат",
+      "Дуэль тайминга — мой результат",
       `Игрок: ${myParticipant?.nickname ?? "Игрок"}`,
       `Место: ${myPlace ?? "—"}`,
       `Счет: ${myParticipant?.score ?? 0}`,
-      `Лучшая точность: ${myHistorySummary.bestDelta != null ? `${myHistorySummary.bestDelta}ms` : "—"}`,
-      `Средняя точность: ${myHistorySummary.avgDelta != null ? `${myHistorySummary.avgDelta}ms` : "—"}`,
+      `Лучшая точность: ${myHistorySummary.bestDelta != null ? `${myHistorySummary.bestDelta}мс` : "—"}`,
+      `Средняя точность: ${myHistorySummary.avgDelta != null ? `${myHistorySummary.avgDelta}мс` : "—"}`,
       `Категория: ${categoryRuLabel(myCategory)}`,
       `Слоган: ${shareSlogan}`,
     ].join("\n");
@@ -702,11 +702,11 @@ export default function RoomScreen() {
   const downloadResultImage = () => {
     const nickname = (myParticipant?.nickname ?? "Игрок").replace(/[<>&"]/g, "");
     const line1 = `#${myPlace ?? "—"} • ${nickname}`;
-    const line2 = `Score: ${myParticipant?.score ?? 0}`;
-    const line3 = `Best: ${myHistorySummary.bestDelta != null ? `${myHistorySummary.bestDelta}ms` : "—"}  Avg: ${
-      myHistorySummary.avgDelta != null ? `${myHistorySummary.avgDelta}ms` : "—"
+    const line2 = `Счёт: ${myParticipant?.score ?? 0}`;
+    const line3 = `Лучшая: ${myHistorySummary.bestDelta != null ? `${myHistorySummary.bestDelta}мс` : "—"}  Средняя: ${
+      myHistorySummary.avgDelta != null ? `${myHistorySummary.avgDelta}мс` : "—"
     }`;
-    const line4 = `Category: ${categoryRuLabel(myCategory)}  •  ${shareSlogan}`;
+    const line4 = `Категория: ${categoryRuLabel(myCategory)}  •  ${shareSlogan}`;
 
     const svg = `
 <svg xmlns="http://www.w3.org/2000/svg" width="1080" height="1080" viewBox="0 0 1080 1080">
@@ -722,7 +722,7 @@ export default function RoomScreen() {
   </defs>
   <rect width="1080" height="1080" fill="url(#bg)"/>
   <rect x="70" y="70" width="940" height="940" rx="42" fill="#0b1220" stroke="#1f2937" stroke-width="3"/>
-  <text x="120" y="170" fill="#22d3ee" font-size="44" font-family="Inter,Arial,sans-serif" font-weight="700">Guess Duel</text>
+  <text x="120" y="170" fill="#22d3ee" font-size="44" font-family="Inter,Arial,sans-serif" font-weight="700">Дуэль тайминга</text>
   <rect x="120" y="200" width="840" height="8" rx="4" fill="url(#accent)"/>
   <text x="120" y="300" fill="#e5e7eb" font-size="62" font-family="Inter,Arial,sans-serif" font-weight="800">${line1}</text>
   <text x="120" y="390" fill="#10b981" font-size="74" font-family="Inter,Arial,sans-serif" font-weight="900">${line2}</text>
@@ -1221,10 +1221,10 @@ export default function RoomScreen() {
                     idx === 0 ? "border-emerald-400/30" : idx === 1 ? "border-sky-400/30" : "border-fuchsia-400/30";
                   const stats = playerMetrics[p.player_id];
                   const badges: string[] = [];
-                  if (badgeLeaders?.mostAccurate?.playerId === p.player_id) badges.push("Most Accurate");
-                  if (badgeLeaders?.bestStreak?.playerId === p.player_id) badges.push("Best Streak");
-                  if (badgeLeaders?.fastestTrigger?.playerId === p.player_id) badges.push("Fastest Trigger");
-                  if (badgeLeaders?.roundWinner?.playerId === p.player_id) badges.push("Round Winner");
+                  if (badgeLeaders?.mostAccurate?.playerId === p.player_id) badges.push("Самый точный");
+                  if (badgeLeaders?.bestStreak?.playerId === p.player_id) badges.push("Лучшая серия");
+                  if (badgeLeaders?.fastestTrigger?.playerId === p.player_id) badges.push("Самый быстрый триггер");
+                  if (badgeLeaders?.roundWinner?.playerId === p.player_id) badges.push("Победитель раундов");
                   return (
                     <motion.div
                       key={p.id}
@@ -1274,16 +1274,16 @@ export default function RoomScreen() {
                 <div className="text-xs uppercase text-zinc-400">Глобальные бейджи матча</div>
                 <div className="mt-2 flex flex-wrap gap-2">
                   <span className="text-xs px-2 py-1 rounded-full border border-emerald-400/30 bg-emerald-500/10 text-emerald-200">
-                    Most Accurate: {badgeLeaders?.mostAccurate?.nickname ?? "—"}
+                    Самый точный: {badgeLeaders?.mostAccurate?.nickname ?? "—"}
                   </span>
                   <span className="text-xs px-2 py-1 rounded-full border border-sky-400/30 bg-sky-500/10 text-sky-200">
-                    Best Streak: {badgeLeaders?.bestStreak?.nickname ?? "—"}
+                    Лучшая серия: {badgeLeaders?.bestStreak?.nickname ?? "—"}
                   </span>
                   <span className="text-xs px-2 py-1 rounded-full border border-fuchsia-400/30 bg-fuchsia-500/10 text-fuchsia-200">
-                    Fastest Trigger: {badgeLeaders?.fastestTrigger?.nickname ?? "—"}
+                    Самый быстрый триггер: {badgeLeaders?.fastestTrigger?.nickname ?? "—"}
                   </span>
                   <span className="text-xs px-2 py-1 rounded-full border border-amber-400/30 bg-amber-500/10 text-amber-200">
-                    Round Winner: {badgeLeaders?.roundWinner?.nickname ?? "—"}
+                    Победитель раундов: {badgeLeaders?.roundWinner?.nickname ?? "—"}
                   </span>
                 </div>
               </div>
@@ -1362,23 +1362,23 @@ export default function RoomScreen() {
 
                 <div className="mt-4 grid grid-cols-2 md:grid-cols-4 gap-2.5 text-sm">
                   <div className="rounded-xl border border-white/15 bg-black/25 px-3 py-2">
-                    <div className="text-[11px] text-zinc-400 uppercase">Total score</div>
+                    <div className="text-[11px] text-zinc-400 uppercase">Общий счет</div>
                     <div className="font-black text-white">{myParticipant?.score ?? 0}</div>
                   </div>
                   <div className="rounded-xl border border-white/15 bg-black/25 px-3 py-2">
-                    <div className="text-[11px] text-zinc-400 uppercase">Best accuracy</div>
+                    <div className="text-[11px] text-zinc-400 uppercase">Лучшая точность</div>
                     <div className="font-black text-emerald-200">
-                      {myHistorySummary.bestDelta != null ? `${myHistorySummary.bestDelta}ms` : "—"}
+                      {myHistorySummary.bestDelta != null ? `${myHistorySummary.bestDelta}мс` : "—"}
                     </div>
                   </div>
                   <div className="rounded-xl border border-white/15 bg-black/25 px-3 py-2">
-                    <div className="text-[11px] text-zinc-400 uppercase">Average accuracy</div>
+                    <div className="text-[11px] text-zinc-400 uppercase">Средняя точность</div>
                     <div className="font-black text-sky-200">
-                      {myHistorySummary.avgDelta != null ? `${myHistorySummary.avgDelta}ms` : "—"}
+                      {myHistorySummary.avgDelta != null ? `${myHistorySummary.avgDelta}мс` : "—"}
                     </div>
                   </div>
                   <div className="rounded-xl border border-white/15 bg-black/25 px-3 py-2">
-                    <div className="text-[11px] text-zinc-400 uppercase">Category</div>
+                    <div className="text-[11px] text-zinc-400 uppercase">Категория</div>
                     <div className="font-black text-zinc-100">{categoryRuLabel(myCategory)}</div>
                   </div>
                 </div>
@@ -1389,14 +1389,14 @@ export default function RoomScreen() {
                     onClick={copyResult}
                     className="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-white/15 hover:bg-white/20 border border-white/20 font-bold transition"
                   >
-                    {copiedResult ? "Скопировано" : "Copy Result"}
+                    {copiedResult ? "Скопировано" : "Копировать результат"}
                   </button>
                   <button
                     type="button"
                     onClick={downloadResultImage}
                     className="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-emerald-500 text-black hover:bg-emerald-400 font-bold transition"
                   >
-                    Download Image
+                    Скачать изображение
                   </button>
                 </div>
               </div>

@@ -46,7 +46,8 @@ export default function MatchesScreen() {
           <div>
             <h1 className="text-3xl md:text-4xl font-black tracking-tight text-white">Матчи</h1>
             <p className="text-zinc-200 mt-1">
-              Выберите матч, сторону и предсказывайте события в реальном эфире.
+              Second-screen: матч смотрите на ТВ или в стриме, здесь выберите игру по матчу, сторону
+              и событие.
             </p>
           </div>
           <div className="flex items-center gap-2">

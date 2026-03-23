@@ -374,7 +374,8 @@ export default function MatchDetailsScreen({ slug }: Props) {
             <div className="mt-4 gd-card-soft">
               <div className="text-xs uppercase tracking-wide text-zinc-400">Как играть</div>
               <div className="mt-1 text-sm text-zinc-100">
-                Откройте трансляцию и нажмите «СЕЙЧАС!» в момент события.
+                Смотрите матч на другом экране (ТВ, стрим, планшет), а здесь нажимайте «СЕЙЧАС!» в
+                момент события на трансляции.
               </div>
             </div>
           </div>
@@ -424,7 +425,8 @@ export default function MatchDetailsScreen({ slug }: Props) {
             </div>
 
             <div className="mt-3 text-xs text-zinc-200">
-              Смотрите трансляцию и нажмите «СЕЙЧАС!» в момент целевого события.
+              Трансляция — на другом экране; в комнате нажимайте «СЕЙЧАС!», когда на эфире случится
+              выбранное событие.
             </div>
             {error ? <div className="mt-2 text-sm text-rose-200">{error}</div> : null}
           </div>

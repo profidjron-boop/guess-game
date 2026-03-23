@@ -1,5 +1,5 @@
 import MatchesScreen from "@/components/MatchesScreen";
 
-export default function Home() {
+export default function MatchesRoutePage() {
   return <MatchesScreen />;
 }

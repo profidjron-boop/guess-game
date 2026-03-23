@@ -467,6 +467,14 @@ export default function RoomScreen() {
           duration_ms: durationMs,
           event_time_ms: generateEventTimeMs(durationMs),
           status: "pending",
+          match_slug: room.match_slug ?? null,
+          event_type: room.event_type ?? null,
+          event_label: room.event_label ?? null,
+          round_context: {
+            matchTitle: room.match_title ?? null,
+            league: room.league ?? null,
+            selectedTeamScope: "selected_team",
+          },
         };
       });
 
@@ -814,6 +822,7 @@ export default function RoomScreen() {
     if (typeof window === "undefined" || !roomCode) return "";
     return `${window.location.origin}/room/${roomCode}`;
   }, [roomCode]);
+  const backHref = room?.match_slug ? `/match/${room.match_slug}` : "/";
 
   if (loading) {
     return (
@@ -837,10 +846,10 @@ export default function RoomScreen() {
         <div className="flex items-center justify-between gap-3">
           <div className="flex items-center gap-3">
             <Link
-              href="/"
+              href={backHref}
               className="px-3 py-2 rounded-xl border border-white/30 bg-white/20 hover:bg-white/30 transition text-sm font-semibold text-white"
             >
-              Лобби
+              К матчам
             </Link>
             <div>
               <div className="text-lg font-black tracking-tight">Комната {room.code}</div>
@@ -851,6 +860,12 @@ export default function RoomScreen() {
                     ? "Игра идёт"
                     : "Результаты"}
               </div>
+              {room.match_title ? (
+                <div className="text-xs text-zinc-200 mt-1">
+                  Match: {room.match_title}
+                  {room.league ? ` • ${room.league}` : ""}
+                </div>
+              ) : null}
             </div>
           </div>
 
@@ -916,6 +931,18 @@ export default function RoomScreen() {
                     Скопировать ссылку
                   </button>
                 </div>
+                {room.match_title ? (
+                  <div className="p-3 rounded-xl border border-white/20 bg-white/10">
+                    <div className="text-xs text-zinc-300">Контекст матча</div>
+                    <div className="text-sm font-semibold text-zinc-100 mt-1">
+                      {room.match_title}
+                    </div>
+                    <div className="text-xs text-zinc-200 mt-1">
+                      Событие: {room.event_label ?? "Событие по матчу"} • Сторона:{" "}
+                      {myParticipant?.selected_team ?? "не выбрана"}
+                    </div>
+                  </div>
+                ) : null}
               </div>
 
               <div className="mt-4 flex gap-3">
@@ -979,6 +1006,11 @@ export default function RoomScreen() {
                   >
                     <div className="flex items-center gap-3">
                       <PlayerBadge nickname={p.nickname} avatar={p.avatar} />
+                      {p.selected_team ? (
+                        <span className="text-[11px] px-2 py-1 rounded-full border border-sky-400/30 bg-sky-500/10 text-sky-100 font-semibold">
+                          {p.selected_team}
+                        </span>
+                      ) : null}
                       {p.player_id === room.host_id ? (
                         <span className="text-xs px-2 py-1 rounded-full bg-emerald-500/20 border border-emerald-400/30 text-emerald-200 font-semibold">
                           ХОСТ
@@ -1020,6 +1052,15 @@ export default function RoomScreen() {
                       {runningRound.category === "sport" ? "Спорт" : "Киберспорт"}
                     </span>
                   </div>
+                  {room.match_title ? (
+                    <div className="mt-2 text-xs text-zinc-100">
+                      Match: <span className="font-semibold">{room.match_title}</span>
+                      {room.league ? ` • League: ${room.league}` : ""} • Сторона:{" "}
+                      <span className="text-emerald-200 font-semibold">
+                        {myParticipant?.selected_team ?? "не выбрана"}
+                      </span>
+                    </div>
+                  ) : null}
                 </div>
                 <div className="text-right">
                   <div className="text-xs text-zinc-400">Текущий счёт</div>
@@ -1036,8 +1077,11 @@ export default function RoomScreen() {
               </div>
 
               <div className="mt-5">
-                <div className="text-xs text-zinc-400 mb-2">
-                  Нужно нажать ровно в момент события
+                <div className="text-xs text-zinc-200 mb-2">
+                  Смотрите трансляцию и нажмите в момент события:{" "}
+                  <span className="font-semibold text-emerald-200">
+                    {room.event_label ?? "целевое событие вашей команды"}
+                  </span>
                 </div>
                 <AnimatePresence mode="wait">
                   <motion.button
@@ -1483,10 +1527,10 @@ export default function RoomScreen() {
                 )}
                 <button
                   type="button"
-                  onClick={() => router.push("/")}
+                  onClick={() => router.push(backHref)}
                   className="w-full md:w-auto px-6 py-3 rounded-2xl bg-white/5 border border-white/10 text-white font-black hover:bg-white/10 transition"
                 >
-                  Вернуться в лобби
+                  Вернуться к матчам
                 </button>
               </div>
 

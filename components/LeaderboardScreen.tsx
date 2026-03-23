@@ -87,7 +87,7 @@ export default function LeaderboardScreen() {
             href="/"
             className="px-4 py-2 rounded-xl border border-white/25 bg-white/15 hover:bg-white/25 transition text-sm font-semibold text-white"
           >
-            В лобби
+            К матчам
           </Link>
         </div>
 
@@ -136,7 +136,7 @@ export default function LeaderboardScreen() {
               href="/"
               className="inline-flex mt-4 px-4 py-2 rounded-xl bg-emerald-500 text-black font-black hover:bg-emerald-400 transition"
             >
-              Вернуться в лобби
+              К списку матчей
             </Link>
           </div>
         ) : (

@@ -479,6 +479,67 @@ to anon, authenticated
 using (true)
 with check (true);
 
+-- -----------------------------------
+-- Match-centric expansion (second-screen fan mode)
+-- -----------------------------------
+
+create table if not exists public.matches (
+  id uuid primary key default gen_random_uuid(),
+  slug text unique not null,
+  home_team text not null,
+  away_team text not null,
+  home_team_logo text,
+  away_team_logo text,
+  category text not null,
+  league text not null,
+  status text not null check (status in ('live', 'upcoming', 'finished')),
+  starts_at timestamptz,
+  created_at timestamptz not null default now()
+);
+
+create table if not exists public.match_event_templates (
+  id uuid primary key default gen_random_uuid(),
+  match_id uuid not null references public.matches(id) on delete cascade,
+  event_type text not null,
+  label text not null,
+  description text,
+  team_scope text not null default 'selected_team' check (team_scope in ('home', 'away', 'selected_team', 'neutral')),
+  created_at timestamptz not null default now()
+);
+
+alter table public.rooms add column if not exists match_slug text;
+alter table public.rooms add column if not exists match_title text;
+alter table public.rooms add column if not exists match_home_team text;
+alter table public.rooms add column if not exists match_away_team text;
+alter table public.rooms add column if not exists league text;
+alter table public.rooms add column if not exists event_type text;
+alter table public.rooms add column if not exists event_label text;
+
+alter table public.participants add column if not exists selected_team text;
+alter table public.participants add column if not exists selected_team_side text check (selected_team_side in ('home', 'away'));
+
+alter table public.rounds add column if not exists match_slug text;
+alter table public.rounds add column if not exists event_type text;
+alter table public.rounds add column if not exists event_label text;
+alter table public.rounds add column if not exists round_context jsonb default '{}'::jsonb;
+
+alter table public.matches enable row level security;
+alter table public.match_event_templates enable row level security;
+
+drop policy if exists matches_read_all on public.matches;
+create policy matches_read_all
+on public.matches
+for select
+to anon, authenticated
+using (true);
+
+drop policy if exists match_event_templates_read_all on public.match_event_templates;
+create policy match_event_templates_read_all
+on public.match_event_templates
+for select
+to anon, authenticated
+using (true);
+
 -----------------------
 -- Recommended: set FK constraints
 -----------------------

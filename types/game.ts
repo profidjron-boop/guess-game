@@ -15,6 +15,13 @@ export type Room = {
   total_rounds: number;
   created_at: string;
   started_at: string | null;
+  match_slug?: string | null;
+  match_title?: string | null;
+  match_home_team?: string | null;
+  match_away_team?: string | null;
+  league?: string | null;
+  event_type?: string | null;
+  event_label?: string | null;
 };
 
 export type Participant = {
@@ -29,6 +36,8 @@ export type Participant = {
   connected: boolean;
   ready: boolean;
   created_at: string;
+  selected_team?: string | null;
+  selected_team_side?: "home" | "away" | null;
 };
 
 export type RoundTemplate = {
@@ -75,4 +84,3 @@ export type LeaderboardRow = {
   category: Category;
   played_at: string;
 };
-

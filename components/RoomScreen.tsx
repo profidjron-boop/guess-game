@@ -10,7 +10,7 @@ import type { Guess, Participant, Round, Room, RoundTemplate } from "@/types/gam
 import PlayerBadge from "@/components/PlayerBadge";
 import CountdownTimer from "@/components/CountdownTimer";
 import { usePlayerProfile } from "@/hooks/usePlayerProfile";
-import { computeDeltaMs, computePressTimeMs, generateEventTimeMs, isRoundReadyForGuess } from "@/lib/game/time";
+import { generateEventTimeMs, isRoundReadyForGuess } from "@/lib/game/time";
 
 type GuessWithFlag = Guess & { hasGuess: true };
 type NoGuess = { hasGuess: false };
@@ -263,29 +263,29 @@ export default function RoomScreen() {
     if (myGuess) return; // already pressed
 
     try {
-      const startedAtIso = runningRound.started_at!;
-      const pressTimeMs = computePressTimeMs(startedAtIso, Date.now());
-      const deltaMs = computeDeltaMs(pressTimeMs, runningRound.event_time_ms!);
+      const { data, error } = await supabase.rpc("submit_guess_server", {
+        p_room_id: room.id,
+        p_round_id: runningRound.id,
+        p_player_id: playerId,
+      });
+      if (error) throw error;
 
-      await supabase.from("guesses").insert({
-        room_id: room.id,
-        round_id: runningRound.id,
-        player_id: playerId,
-        press_time_ms: pressTimeMs,
-        delta_ms: deltaMs,
-      });
       scheduleRefresh();
-      // optimistic local lock:
-      setMyGuess({
-        id: "optimistic",
-        room_id: room.id,
-        round_id: runningRound.id,
-        player_id: playerId,
-        press_time_ms: pressTimeMs,
-        delta_ms: deltaMs,
-        points: 0,
-        created_at: new Date().toISOString(),
-      });
+      if (data) {
+        setMyGuess(data as Guess);
+      } else {
+        // optimistic lock if RPC returned empty payload for any reason
+        setMyGuess({
+          id: "optimistic",
+          room_id: room.id,
+          round_id: runningRound.id,
+          player_id: playerId,
+          press_time_ms: 0,
+          delta_ms: 0,
+          points: 0,
+          created_at: new Date().toISOString(),
+        });
+      }
     } catch {
       // ignore unique constraint errors (double click)
     }

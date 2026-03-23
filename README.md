@@ -52,8 +52,7 @@ types/
    - `supabase/schema.sql`
 
 Примечание: в этом проекте guest-игроки не используют Supabase Auth.
-Для локального/демо запуска RLS в схеме не включён по умолчанию.
-Если вы включаете RLS, добавьте policies для чтения/записи таблиц и вызовов функций.
+RLS/policies уже включены в `supabase/schema.sql` (guest-friendly режим для anon/authenticated ролей).
 
 ## Env
 
@@ -103,6 +102,7 @@ npm run dev
 - таблицы: `rooms`, `participants`, `round_templates`, `rounds`, `guesses`, `leaderboard`
 - функции:
   - `compute_base_points(delta_ms)`
+  - `submit_guess_server(room_id, round_id, player_id)` (серверно вычисляет `press_time_ms` и `delta_ms`)
   - `apply_round_results(room_id, round_id)` (очки, streak/серии, winner раунда)
   - `finalize_game(room_id)` (запись результатов в `leaderboard`)
 

@@ -320,6 +320,159 @@ begin
 end;
 $$;
 
+-- Server-side guess submit:
+-- Computes press_time_ms and delta_ms from DB time, not from client payload.
+create or replace function public.submit_guess_server(
+  p_room_id uuid,
+  p_round_id uuid,
+  p_player_id uuid
+)
+returns public.guesses
+language plpgsql
+as $$
+declare
+  v_round public.rounds%rowtype;
+  v_press_time_ms integer;
+  v_delta_ms integer;
+  v_row public.guesses%rowtype;
+begin
+  select *
+    into v_round
+  from public.rounds
+  where id = p_round_id
+    and room_id = p_room_id
+  for update;
+
+  if not found then
+    raise exception 'round_not_found';
+  end if;
+
+  if v_round.status <> 'running' then
+    raise exception 'round_not_running';
+  end if;
+
+  if v_round.started_at is null or v_round.event_time_ms is null then
+    raise exception 'round_not_ready';
+  end if;
+
+  if not exists (
+    select 1
+    from public.participants p
+    where p.room_id = p_room_id and p.player_id = p_player_id
+  ) then
+    raise exception 'participant_not_in_room';
+  end if;
+
+  if exists (
+    select 1
+    from public.guesses g
+    where g.room_id = p_room_id
+      and g.round_id = p_round_id
+      and g.player_id = p_player_id
+  ) then
+    raise exception 'already_guessed';
+  end if;
+
+  v_press_time_ms := greatest(
+    0,
+    floor(extract(epoch from (clock_timestamp() - v_round.started_at)) * 1000)::integer
+  );
+  v_delta_ms := v_press_time_ms - v_round.event_time_ms;
+
+  insert into public.guesses (
+    room_id,
+    round_id,
+    player_id,
+    press_time_ms,
+    delta_ms,
+    points
+  )
+  values (
+    p_room_id,
+    p_round_id,
+    p_player_id,
+    v_press_time_ms,
+    v_delta_ms,
+    0
+  )
+  returning * into v_row;
+
+  return v_row;
+end;
+$$;
+
+-----------------------
+-- RLS
+-----------------------
+alter table public.rooms enable row level security;
+alter table public.participants enable row level security;
+alter table public.round_templates enable row level security;
+alter table public.rounds enable row level security;
+alter table public.guesses enable row level security;
+alter table public.leaderboard enable row level security;
+
+-- Guest-friendly policies (anon/authenticated) for browser multiplayer use.
+drop policy if exists rooms_rw_all on public.rooms;
+create policy rooms_rw_all
+on public.rooms
+for all
+to anon, authenticated
+using (true)
+with check (true);
+
+drop policy if exists participants_rw_all on public.participants;
+create policy participants_rw_all
+on public.participants
+for all
+to anon, authenticated
+using (true)
+with check (true);
+
+drop policy if exists round_templates_read_all on public.round_templates;
+create policy round_templates_read_all
+on public.round_templates
+for select
+to anon, authenticated
+using (true);
+
+drop policy if exists rounds_rw_all on public.rounds;
+create policy rounds_rw_all
+on public.rounds
+for all
+to anon, authenticated
+using (true)
+with check (true);
+
+drop policy if exists guesses_rw_all on public.guesses;
+create policy guesses_rw_all
+on public.guesses
+for all
+to anon, authenticated
+using (true)
+with check (true);
+
+drop policy if exists leaderboard_read_all on public.leaderboard;
+create policy leaderboard_read_all
+on public.leaderboard
+for select
+to anon, authenticated
+using (true);
+
+drop policy if exists leaderboard_insert_all on public.leaderboard;
+create policy leaderboard_insert_all
+on public.leaderboard
+for insert
+to anon, authenticated
+with check (true);
+
+drop policy if exists leaderboard_update_all on public.leaderboard;
+create policy leaderboard_update_all
+on public.leaderboard
+for update
+to anon, authenticated
+using (true)
+with check (true);
+
 -----------------------
 -- Recommended: set FK constraints
 -----------------------

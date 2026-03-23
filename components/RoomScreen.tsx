@@ -26,6 +26,52 @@ function formatMs(ms: number | null | undefined) {
   return `${sign}${ms} ms`;
 }
 
+type ResultTone = "perfect" | "great" | "close" | "poor" | "early";
+
+function classifyResult(deltaMs: number | null | undefined): {
+  label: string;
+  tone: ResultTone;
+} {
+  if (deltaMs == null) return { label: "Missed the moment", tone: "poor" };
+  if (deltaMs < 0) return { label: "Too early", tone: "early" };
+  const abs = Math.abs(deltaMs);
+  if (abs <= 500) return { label: "Perfect timing", tone: "perfect" };
+  if (abs <= 1000) return { label: "Great hit", tone: "great" };
+  if (abs <= 2000) return { label: "Close enough", tone: "close" };
+  if (abs <= 5000) return { label: "Close enough", tone: "close" };
+  return { label: "Missed the moment", tone: "poor" };
+}
+
+function toneClasses(tone: ResultTone) {
+  switch (tone) {
+    case "perfect":
+      return {
+        pill: "bg-emerald-500/20 border-emerald-400/40 text-emerald-200",
+        text: "text-emerald-200",
+      };
+    case "great":
+      return {
+        pill: "bg-sky-500/20 border-sky-400/40 text-sky-200",
+        text: "text-sky-200",
+      };
+    case "close":
+      return {
+        pill: "bg-amber-500/20 border-amber-400/40 text-amber-200",
+        text: "text-amber-200",
+      };
+    case "early":
+      return {
+        pill: "bg-rose-500/20 border-rose-400/40 text-rose-200",
+        text: "text-rose-200",
+      };
+    default:
+      return {
+        pill: "bg-zinc-500/20 border-zinc-400/40 text-zinc-200",
+        text: "text-zinc-300",
+      };
+  }
+}
+
 export default function RoomScreen() {
   const router = useRouter();
   const params = useParams<{ code: string }>();
@@ -744,26 +790,32 @@ export default function RoomScreen() {
                     <thead>
                       <tr className="text-xs uppercase text-zinc-400 bg-white/5">
                         <th className="px-3 py-3">Игрок</th>
+                        <th className="px-3 py-3">Статус</th>
                         <th className="px-3 py-3">Нажал</th>
                         <th className="px-3 py-3">Отклонение</th>
                         <th className="px-3 py-3">Очки</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {roundResults.map((row) => {
+                      {roundResults.map((row, idx) => {
                         const isWinner =
                           roundModal.round.winner_player_id &&
                           row.player.player_id === roundModal.round.winner_player_id;
                         const absDelta =
                           row.guess.hasGuess && row.guess.delta_ms != null ? Math.abs(row.guess.delta_ms) : null;
+                        const result = classifyResult(row.guess.hasGuess ? row.guess.delta_ms : null);
+                        const tone = toneClasses(result.tone);
 
                         return (
-                          <tr
+                          <motion.tr
                             key={row.player.id}
                             className={clsx(
                               "border-t border-white/5",
-                              isWinner && "bg-emerald-500/10"
+                              isWinner && "bg-emerald-500/10 ring-1 ring-inset ring-emerald-400/30"
                             )}
+                            initial={{ opacity: 0, y: 4 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ duration: 0.16, delay: idx * 0.03 }}
                           >
                             <td className="px-3 py-3">
                               <div className="flex items-center gap-3">
@@ -775,12 +827,17 @@ export default function RoomScreen() {
                                 ) : null}
                               </div>
                             </td>
+                            <td className="px-3 py-3">
+                              <span className={clsx("text-[11px] px-2 py-1 rounded-full border font-bold", tone.pill)}>
+                                {result.label}
+                              </span>
+                            </td>
                             <td className="px-3 py-3 text-sm text-zinc-200">
                               {row.guess.hasGuess ? formatMs(row.guess.press_time_ms) : "—"}
                             </td>
                             <td className="px-3 py-3 text-sm font-semibold">
                               {row.guess.hasGuess ? (
-                                <span className={absDelta != null && absDelta <= 1000 ? "text-emerald-200" : "text-zinc-200"}>
+                                <span className={tone.text}>
                                   {formatMs(row.guess.delta_ms)}{" "}
                                   {absDelta != null ? <span className="text-zinc-500 font-semibold">({absDelta}мс)</span> : null}
                                 </span>
@@ -788,18 +845,42 @@ export default function RoomScreen() {
                                 <span className="text-zinc-500">нет нажатия</span>
                               )}
                             </td>
-                            <td className="px-3 py-3 text-sm font-black text-emerald-200">
-                              {row.guess.hasGuess ? row.guess.points : 0}
+                            <td className={clsx("px-3 py-3 text-sm font-black", row.guess.hasGuess ? tone.text : "text-zinc-300")}>
+                              {row.guess.hasGuess ? (
+                                <>
+                                  {row.guess.points}
+                                  <div className="text-[11px] font-semibold text-zinc-500 mt-0.5">
+                                    {result.label}
+                                  </div>
+                                </>
+                              ) : (
+                                0
+                              )}
                             </td>
-                          </tr>
+                          </motion.tr>
                         );
                       })}
                     </tbody>
                   </table>
                 </div>
 
-                <div className="mt-5 text-xs text-zinc-500">
-                  Следующий раунд запустится автоматически после конца таймера.
+                <div className="mt-5 grid grid-cols-2 md:grid-cols-4 gap-2 text-[11px]">
+                  <div className="px-2 py-1.5 rounded-lg border border-emerald-400/30 bg-emerald-500/10 text-emerald-200">
+                    Очень точно
+                  </div>
+                  <div className="px-2 py-1.5 rounded-lg border border-sky-400/30 bg-sky-500/10 text-sky-200">
+                    Средне
+                  </div>
+                  <div className="px-2 py-1.5 rounded-lg border border-zinc-400/30 bg-zinc-500/10 text-zinc-200">
+                    Плохо
+                  </div>
+                  <div className="px-2 py-1.5 rounded-lg border border-rose-400/30 bg-rose-500/10 text-rose-200">
+                    Раннее нажатие
+                  </div>
+                </div>
+
+                <div className="mt-3 text-xs text-zinc-500">
+                  Игроки отсортированы от самого точного к менее точному. Следующий раунд запускается автоматически.
                 </div>
               </motion.div>
             </motion.div>

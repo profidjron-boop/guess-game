@@ -103,6 +103,24 @@ npm run dev
 3. Во второй присоединитесь по коду.
 4. Запустите игру и проверьте синхронность раундов, результатов и финальной таблицы.
 
+## Проверки качества и тесты
+
+Базовые инженерные проверки:
+
+- `npm run lint` - статический анализ и правила Next/ESLint.
+- `npm run test:unit` - unit + integration тесты (Vitest).
+- `npm run build` - production build + type checks.
+- `npm run format:check` - проверка форматирования Prettier.
+- `npm run audit:deps` - аудит уязвимостей зависимостей.
+
+E2E smoke:
+
+- `npm run test:e2e` - Playwright сценарий для ключевого пути лобби.
+
+Load smoke:
+
+- `npm run test:load` - k6 smoke тест (требуется установленный `k6`).
+
 ## Деплой на Vercel
 
 1. Импортируйте репозиторий в Vercel.
@@ -115,6 +133,13 @@ npm run dev
 
 - Production: отдельный Supabase-проект.
 - Preview/Development: отдельные переменные окружения и база для безопасных тестов.
+
+## CI/CD
+
+В репозитории настроен GitHub Actions workflow `.github/workflows/ci.yml`:
+
+- Job `quality`: `lint -> test:unit -> build -> audit:deps`.
+- Job `e2e`: Playwright smoke тест в Chromium после успешного `quality`.
 
 ## Структура проекта
 
@@ -156,4 +181,3 @@ types/
 - Персональная статистика игрока между матчами.
 - Набор e2e-тестов для основных пользовательских сценариев.
 - Наблюдаемость продакшена (ошибки, метрики, аналитика).
-

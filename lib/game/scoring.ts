@@ -1,5 +1,3 @@
-import type { Category } from "@/types/game";
-
 export type ScoringResult = {
   deltaMs: number;
   absDeltaMs: number;
@@ -21,10 +19,7 @@ function computeBasePoints(deltaMs: number) {
   return 0;
 }
 
-export function computeRoundScoring(args: {
-  deltaMs: number;
-  oldStreak: number;
-}): ScoringResult {
+export function computeRoundScoring(args: { deltaMs: number; oldStreak: number }): ScoringResult {
   const deltaMs = Math.round(args.deltaMs);
   const absDeltaMs = Math.abs(deltaMs);
   const isEarly = deltaMs < 0;
@@ -61,10 +56,3 @@ export function computeSeriesSummary(args: { absDeltas: number[]; exactWindowMs:
   }
   return { maxStreak: max };
 }
-
-// Placeholder for future categorization logic (sport/cyber) if you later
-// move templates to DB-only configuration.
-export function normalizeCategory(_category: string): Category {
-  return (_category === "cyber" ? "cyber" : "sport") as Category;
-}
-

@@ -6,7 +6,15 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "format": "prettier --write \"tests/**/*.{ts,js}\" \"*.{json,md,ts}\" \".github/workflows/*.yml\"",
+    "format:check": "prettier --check \"tests/**/*.{ts,js}\" \"*.{json,md,ts}\" \".github/workflows/*.yml\"",
+    "test": "vitest run --coverage",
+    "test:unit": "vitest run",
+    "test:e2e": "playwright test",
+    "test:load": "k6 run tests/load/smoke.js",
+    "audit:deps": "npm audit --audit-level=high || true",
+    "prepare": "husky"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.100.0",
@@ -17,16 +25,27 @@
     "react-dom": "^18",
     "zustand": "^5.0.12"
   },
+  "lint-staged": {
+    "*.{js,jsx,ts,tsx,mjs,cjs,json,md,css}": [
+      "prettier --write"
+    ]
+  },
   "devDependencies": {
+    "@playwright/test": "^1.58.2",
     "@types/node": "^20",
     "@types/react": "^18",
     "@types/react-dom": "^18",
     "@types/uuid": "^10.0.0",
+    "@vitest/coverage-v8": "^4.1.1",
     "eslint": "^8",
     "eslint-config-next": "14.2.35",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.4.0",
     "postcss": "^8",
+    "prettier": "^3.8.1",
     "tailwindcss": "^3.4.1",
     "typescript": "^5",
-    "uuid": "^13.0.0"
+    "uuid": "^13.0.0",
+    "vitest": "^4.1.1"
   }
 }

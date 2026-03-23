@@ -1,40 +1,28 @@
-# GUESS_DUEL_EPIC_PACK_03_UI_GAME_MECHANICS_v1_1
+# GUESS_DUEL_EPIC_PACK_03 — UI + game mechanics
 
-Objective (UI + game mechanics):
+**Version:** v1.2  
+**Date:** 2026-03-24
 
-- реализовать fan-centric second-screen UX и реальную механику раундов.
+**Objective:** fan-centric second-screen и игровая механика.
 
-Deliverables:
+---
 
-1. Match entry flow
-   - список матчей с фильтрами/поиском
-   - страница матча
-   - выбор команды и события
-   - create/join room по матчу
-2. Waiting room
-   - code + invite link + match/event context
-   - online participants list
-   - host badge
-   - ready state
-   - only host can start
-   - selected team у каждого участника
-3. Gameplay
-   - компактное окно/прогресс приёма нажатий (технический лимит сессии; не «часы матча»)
-   - событие title + категория + match + league + selected team
-   - big button `СЕЙЧАС!` (lock after press; до эталона `delta_ms` null)
-   - у хоста: кнопка фиксации эталона на эфире → RPC `mark_round_event`
-   - realtime scoreboard
-4. Round results modal
-   - event time, press time, delta ms, points + match/event context
-   - highlight winner
-5. Final screen
-   - animated top-3 + match summary
-   - full table + accuracy stats + streak + round history
+## Deliverables
 
-Status:
+1. Вход: каталог матчей, страница матча, создание/вход в комнату по матчу.
+2. Комната ожидания: код, ссылка, участники, ready, старт хоста.
+3. Игра: контекст матча/команды/события; **`СЕЙЧАС!`**; у хоста — **`mark_round_event`**; **без** таймера/полоски окна раунда; realtime-таблица.
+4. Модалка результата раунда; финал; история.
 
-- implemented in `components/` + routes under `app/`.
+---
 
-Notes:
+## Статус
 
-- `press_time_ms` и итоговый `delta_ms` — серверно: `submit_guess_server` + цепочка после `mark_round_event`.
+**Done** — `components/`, `app/`.
+
+---
+
+## Технические заметки
+
+- `press_time_ms` / итоговые дельты и очки — сервер через RPC.
+- Ошибки в UI: **`formatUnknownError`**.

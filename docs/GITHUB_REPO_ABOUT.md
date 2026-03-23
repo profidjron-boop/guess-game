@@ -1,9 +1,11 @@
 # Подсказка для GitHub «About»
 
-Краткое описание репозитория в настройках **About** лучше держать в одном духе с README, чтобы не было рассинхрона.
+Держите краткое описание в настройках репозитория согласованным с **`README.md`**.
 
-**Пример одной строки (Description):**
+## Description (одна строка)
 
-> Second-screen игра для болельщика: трансляция на другом экране, в приложении — матч, команда и кнопка «СЕЙЧАС!» в момент события на эфире. Next.js + Supabase.
+> Second-screen игра для зрителя: трансляция на другом экране, в приложении — матч, команда, **`СЕЙЧАС!`**, эталон момента на эфире задаёт хост. Next.js + Supabase Realtime.
 
-**Пример Topics:** `nextjs`, `supabase`, `realtime`, `multiplayer`, `sports`, `esports`, `typescript`
+## Topics (пример)
+
+`nextjs` `supabase` `realtime` `multiplayer` `typescript` `sports` `esports`

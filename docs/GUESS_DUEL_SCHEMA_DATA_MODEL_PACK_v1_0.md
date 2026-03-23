@@ -1,8 +1,8 @@
-# GUESS_DUEL_SCHEMA_DATA_MODEL_PACK_v1_0
+# GUESS_DUEL_SCHEMA_DATA_MODEL_PACK
 
-Version: v1.1  
-Date: 2026-03-24  
-Project: Guess Duel
+**Version:** v1.2  
+**Date:** 2026-03-24  
+**Project:** Guess Duel
 
 ---
 
@@ -38,7 +38,7 @@ Project: Guess Duel
 4. `rounds`
 
 - `room_id`, `round_number`, `title`, `category`
-- `duration_ms` — **максимальное окно** раунда (лимит для нажатий и для отметки эталона), не «таймер матча на эфире»
+- `duration_ms` — из шаблонов; **в RPC лимит по времени не используется** (нажатия и эталон хоста не режутся по `duration_ms`)
 - **`event_time_ms`** — смещение в мс от `started_at` до **момента события на трансляции**; **`null`**, пока хост не вызвал `mark_round_event`
 - `status` (`pending|running|ended`)
 - `winner_player_id`

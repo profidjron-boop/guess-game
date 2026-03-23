@@ -1,74 +1,76 @@
-# GUESS_DUEL_DOCUMENT_INDEX_v1_2
+# GUESS_DUEL_DOCUMENT_INDEX
 
-Version: v1.2  
-Date: 2026-03-24  
-Product: Guess Duel  
-Purpose: master index of all governing documents for this project
+**Version:** v1.3  
+**Date:** 2026-03-24  
+**Product:** Guess Duel  
+**Purpose:** единый указатель всей проектной документации в `docs/`
 
-All listed files live in the repository folder `docs/` (formerly a Cyrillic-named docs folder).
+**Быстрый старт:** [`README.md`](./README.md) в этой папке.
 
-Release verification shortcut: `docs/DESM_VERIFY.md` + `npm run verify:desm`.
-
----
-
-## 1) Strategic / governing
-
-1. `GUESS_DUEL_PROJECT_STATE_v1_0.md` - project mode, constraints, stack, current slice
-2. `GUESS_DUEL_READY_TZ_v1_0.md` - readiness / scope snapshot (fan-centric v1.1; эталон на эфире через `mark_round_event`)
-3. `GUESS_DUEL_BUILD_PLAN_v1_0.md` - executed phase plan (v1.1)
+**Проверка перед релизом:** [`DESM_VERIFY.md`](./DESM_VERIFY.md) → `npm run verify:desm`.
 
 ---
 
-## 2) Planning / execution
+## 1) Стратегия и состояние
 
-4. `GUESS_DUEL_EXECUTION_BACKLOG_v1_0.md` - epic-level backlog and dependencies (v1.1)
-5. `GUESS_DUEL_EPIC_PACK_01_FOUNDATION_v1_0.md`
-6. `GUESS_DUEL_EPIC_PACK_02_MULTIPLAYER_REALTIME_v1_0.md`
-7. `GUESS_DUEL_EPIC_PACK_03_UI_GAME_MECHANICS_v1_0.md`
-8. `GUESS_DUEL_EPIC_PACK_04_RELEASE_DEPLOY_v1_0.md`
-
----
-
-## 3) Architecture / data / contracts
-
-9. `GUESS_DUEL_ADR_PACK_v1_0.md` - architecture decisions authority (v1.1: ADR-05 эталон на эфире / `mark_round_event`)
-10. `GUESS_DUEL_SCHEMA_DATA_MODEL_PACK_v1_0.md` - schema/data model authority (Supabase), v1.1: nullable `event_time_ms`/`delta_ms` до эталона
-11. `GUESS_DUEL_API_CONTRACT_PACK_v1_0.md` - realtime/data contract (tables + RPC), v1.1: `mark_round_event`, `submit_guess_server`
+| #   | Файл                               | Описание                                            |
+| --- | ---------------------------------- | --------------------------------------------------- |
+| 1   | `GUESS_DUEL_PROJECT_STATE_v1_0.md` | Режим проекта, ограничения, стек, delivery snapshot |
+| 2   | `GUESS_DUEL_READY_TZ_v1_0.md`      | Границы релизной готовности (scope in/out)          |
+| 3   | `GUESS_DUEL_BUILD_PLAN_v1_0.md`    | Исторический план фаз (выполнен)                    |
 
 ---
 
-## 4) UI / quality
+## 2) Планирование и эпики
 
-12. `GUESS_DUEL_UI_SYSTEM_RULES_v1_0.md` - UI/UX implementation rules (v1.1: эталон — хост, таймер сессии вторичен)
-13. `GUESS_DUEL_TEST_STRATEGY_PACK_v1_0.md` - test strategy and release verification
-
----
-
-## 5) Recommended reading order
-
-1. Project State
-2. Ready TZ
-3. ADR Pack
-4. Schema/Data model
-5. API Contract
-6. Build Plan
-7. Execution Backlog
-8. Relevant Epic Packs
-9. UI System Rules
-10. Test Strategy
+| #   | Файл                                                   | Описание                            |
+| --- | ------------------------------------------------------ | ----------------------------------- |
+| 4   | `GUESS_DUEL_EXECUTION_BACKLOG_v1_0.md`                 | Статус эпиков и зависимости         |
+| 5   | `GUESS_DUEL_EPIC_PACK_01_FOUNDATION_v1_0.md`           | Foundation: структура репо, UI-база |
+| 6   | `GUESS_DUEL_EPIC_PACK_02_MULTIPLAYER_REALTIME_v1_0.md` | БД, RPC, Realtime                   |
+| 7   | `GUESS_DUEL_EPIC_PACK_03_UI_GAME_MECHANICS_v1_0.md`    | Fan-flow, комната, игра             |
+| 8   | `GUESS_DUEL_EPIC_PACK_04_RELEASE_DEPLOY_v1_0.md`       | Релиз, RLS, проверки                |
 
 ---
 
-## 6) Release evidence
+## 3) Архитектура, данные, контракты
 
-- Production URL: `https://guess-duel.vercel.app`
-- Last fan-flow implementation commits: `f17102b`, `29934a8`; broadcast-anchor gameplay: `5e01684`
-- QA baseline executed locally (2026-03-24): format, lint, unit, e2e, build, audit, load
+| #   | Файл                                        | Описание                                                     |
+| --- | ------------------------------------------- | ------------------------------------------------------------ |
+| 9   | `GUESS_DUEL_ADR_PACK_v1_0.md`               | Решения (guest mode, RPC, эталон хоста, без таймера окна)    |
+| 10  | `GUESS_DUEL_SCHEMA_DATA_MODEL_PACK_v1_0.md` | Сущности Supabase, поля раундов/guesses                      |
+| 11  | `GUESS_DUEL_API_CONTRACT_PACK_v1_0.md`      | Realtime + RPC: `submit_guess_server`, `mark_round_event`, … |
 
 ---
 
-## 7) Legal / licensing
+## 4) UI и качество
 
-- Root `LICENSE` - proprietary license, all rights reserved; contact: `djron11@mail.ru`
-- `NOTICE` - short copyright + licensing contact
-- `package.json` -> `"license": "UNLICENSED"`, `author` with contact email
+| #   | Файл                                    | Описание                                        |
+| --- | --------------------------------------- | ----------------------------------------------- |
+| 12  | `GUESS_DUEL_UI_SYSTEM_RULES_v1_0.md`    | Правила экранов, second-screen, хост            |
+| 13  | `GUESS_DUEL_TEST_STRATEGY_PACK_v1_0.md` | Пирамида тестов, smoke, зафиксированные прогоны |
+
+---
+
+## 5) Рекомендуемый порядок чтения
+
+1. [`README.md`](./README.md) (этот каталог)
+2. Project State → Ready TZ → ADR Pack
+3. Schema → API Contract
+4. UI System Rules → Test Strategy
+5. Эпики и backlog — по необходимости к расследованию истории
+
+---
+
+## 6) Сведения о релизе
+
+- **Production:** `https://guess-duel.vercel.app`
+- **Supabase:** актуальный `supabase/schema.sql` (таблицы + RPC + RLS + GRANT)
+- **QA:** `npm run verify:desm` (см. `DESM_VERIFY.md`)
+
+---
+
+## 7) Лицензирование
+
+- Корень: `LICENSE`, `NOTICE`, `package.json` → `UNLICENSED`
+- Контакт: `djron11@mail.ru`

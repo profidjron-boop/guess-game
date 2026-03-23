@@ -1,55 +1,65 @@
-# GUESS_DUEL_READY_TZ_v1_1
+# GUESS_DUEL_READY_TZ
 
-Version: v1.1  
-Date: 2026-03-23  
-Project: Guess Duel
+**Version:** v1.2  
+**Date:** 2026-03-24  
+**Project:** Guess Duel
 
----
-
-## 1) Ready scope (in)
-
-- Next.js 16 App Router + TS + Tailwind
-- Supabase Postgres (rooms/participants/rounds/guesses/leaderboard + match-centric extensions) + Realtime sync
-- Механика игры: 5 раундов, кнопка `СЕЙЧАС!` одна нажатие за раунд, победитель раунда по min abs delta, серия/множители (server-authoritative)
-- Screens:
-  - Каталог матчей (фильтры, статусы, карточки матчей, onboarding)
-  - Страница матча (выбор команды и события, запуск комнаты по матчу)
-  - Лобби (legacy route `/lobby` сохранен)
-  - Комната ожидания (код, invite link, онлайн участники, host badge, ready toggle, host start)
-  - Игровой экран (match/league/team/event context + компактное окно приёма нажатий + кнопка `СЕЙЧАС!` + у хоста — фиксация эталона момента на эфире через `mark_round_event` + realtime таблица)
-  - Экран результатов раунда (привязан к матчу/событию/команде)
-  - Итоговый экран (match-centric summary + история раундов + share card)
-  - Глобальный leaderboard (top-20, фильтр спорт/киберспорт/все)
+Описание **границ** того, что считается в scope текущего релиза и что отложено.
 
 ---
 
-## 2) Ready evidence pointers (what to verify before release)
+## 1) В scope (in)
 
-1. Match flow:
-   - `/` открывает каталог матчей, фильтры и поиск работают
-   - `/match/[slug]` показывает матч, выбор стороны и событие
-2. Room/game context:
-   - в комнате и игре видны Match/League/Event/Selected team
-   - в списке участников отображается выбранная команда
-3. Core mechanics:
-   - host стартует игру только в status `waiting`
-   - в каждом раунде кнопка блокируется после первого нажатия; до фиксации эталона `delta_ms` у guess = `null`
-   - хост фиксирует момент события на трансляции (`mark_round_event`) → пересчёт дельт, `apply_round_results`, следующий раунд или финал
-   - после каждого завершённого раунда показывается modal с расчётами
-4. Scoring/winner:
-   - base points + penalty + streak multipliers соответствуют формуле
-   - победитель по минимальному |delta_ms| среди guess с **не-null** `delta_ms`
+**Стек**
+
+- Next.js 16 App Router, TypeScript, Tailwind, Framer Motion
+- Supabase: Postgres + Realtime + RPC
+- Деплой: Vercel
+
+**Механика**
+
+- 5 раундов за сессию; у каждого игрока **одно** нажатие **`СЕЙЧАС!`** на раунд.
+- Победитель раунда: минимальный `|delta_ms|` среди guess с **не-null** `delta_ms` (после эталона хоста).
+- Очки и серии — по формулам в БД (`apply_round_results` / `compute_base_points`).
+- **Эталон времени события** в демо задаёт **хост** через **`mark_round_event`**.
+- **Нет** UI-таймера «окна раунда»; **нет** серверного отказа по `duration_ms` для нажатий и отметки хоста.
+
+**Экраны**
+
+- Каталог матчей (`/`, фильтры, поиск)
+- Страница матча (`/match/[slug]`, выбор стороны и события)
+- Legacy: `/lobby`
+- Комната: код, ссылка, участники, ready, старт хоста (`/room/[code]`)
+- Игра: контекст матча + **`СЕЙЧАС!`** + блок хоста (эталон) + realtime-таблица
+- Модалка результата раунда
+- Финал сессии
+- Глобальный leaderboard (`/leaderboard`)
 
 ---
 
-## 3) Pending / follow-ups (deferred)
+## 2) Проверки перед релизом (ориентиры)
 
-1. Расширить automated e2e/regression тесты на fan-flow (`matches -> match -> room -> rounds`).
-2. Добавить live-stream iframe и live match API интеграцию (future scope).
+1. **Каталог / матч:** маршруты открываются, фильтры работают.
+2. **Комната:** виден матч, лига, событие, выбранная команда у участников.
+3. **Игра:** хост стартует из `waiting`; игроки жмут `СЕЙЧАС!`; хост жмёт эталон; модалка и переход раунда/финал без зависаний.
+4. **Очки:** согласованы с формулами; winner по дельтам после эталона.
+5. **Realtime:** 2+ вкладки видят одни и те же данные комнаты.
 
-## 4) Closed in v1.0 / v1.1 mechanics
+---
 
-- Strict серверная валидация клика реализована через `submit_guess_server` (press на сервере; `delta_ms` после эталона).
-- Эталон момента на эфире — через RPC `mark_round_event` (только хост); продвижение раундов **не** через клиентский `sleep(duration)`.
-- RLS policies для guest-mode добавлены в `supabase/schema.sql`.
-- Match-centric schema extension применена в `supabase/schema.sql`.
+## 3) Вне scope (deferred)
+
+1. Расширенный e2e на весь fan-flow.
+2. Встраивание iframe стрима / внешние live API матча.
+3. Аутентификация пользователей (сейчас guest + `player_id` в localStorage).
+
+---
+
+## 4) Зафиксированные решения (closed)
+
+- Серверный `press_time_ms` и расчёт результата — в RPC; клиент не подделывает итог.
+- Эталон и переход раундов — через **`mark_round_event`**, не через `sleep` на клиенте.
+- RLS для anon — в `supabase/schema.sql`.
+- Match-centric таблицы и поля — в `schema.sql`.
+- Ошибки RPC в UI — через **`formatUnknownError`** (`lib/formatError.ts`).
+- Убраны проверки «поздно» по **`duration_ms`** в `submit_guess_server` и `mark_round_event`.

@@ -1,8 +1,8 @@
-# GUESS_DUEL_API_CONTRACT_PACK_v1_0
+# GUESS_DUEL_API_CONTRACT_PACK
 
-Version: v1.1  
-Date: 2026-03-24  
-Project: Guess Duel
+**Version:** v1.2  
+**Date:** 2026-03-24  
+**Project:** Guess Duel
 
 ---
 
@@ -31,12 +31,14 @@ Refresh с throttling (~250ms).
 - Вызывается любым участником при нажатии «СЕЙЧАС!».
 - Считает `press_time_ms` от серверных часов относительно `rounds.started_at`.
 - Пока **`event_time_ms` у раунда `null`** (эталон ещё не зафиксирован), вставляет строку в `guesses` с **`delta_ms = null`**.
+- **Лимита по `rounds.duration_ms` нет** — нажатие не отклоняется из‑за «истечения окна».
 - После фиксации эталона хостом (`mark_round_event`) дельты пересчитываются на сервере; при повторном нажатии до эталона действует `already_guessed`.
 
 ### 2. `mark_round_event(p_room_id, p_round_id, p_host_id)`
 
 - Вызывается **только хостом** комнаты (`rooms.host_id = p_host_id`).
 - Задаёт **`event_time_ms`** как момент на трансляции (демо: время нажатия хоста относительно `started_at`; позже можно заменить внешним API).
+- **Лимита по `duration_ms` нет** — эталон можно зафиксировать в любой момент после старта раунда.
 - Обновляет `delta_ms` у всех нажатий раунда, вызывает **`apply_round_results`**, переводит раунд в `ended`, открывает следующий `pending` раунд или завершает игру (**`finalize_game`**).
 
 ### 3. `apply_round_results(p_room_id, p_round_id)`
@@ -67,3 +69,5 @@ Refresh с throttling (~250ms).
 
 - UI может опережать отображение, но **очки и победитель раунда** определяются после фиксации эталона и RPC.
 - Клиент **не** продвигает раунды через `sleep(duration)`; продвижение — следствие **`mark_round_event`** и обновлений в БД.
+- Ошибки RPC в UI: **`formatUnknownError`** (`lib/formatError.ts`).
+- **GRANT EXECUTE** на перечисленные RPC для ролей `anon`, `authenticated` — в конце `supabase/schema.sql`.

@@ -1,20 +1,20 @@
-# GUESS_DUEL_EPIC_PACK_01_FOUNDATION_v1_0
+# GUESS_DUEL_EPIC_PACK_01 — Foundation
 
-Objective (Foundation):
+**Version:** v1.2  
+**Date:** 2026-03-24
 
-- зафиксировать архитектуру и подготовить базовый проектный каркас.
+**Objective:** каркас приложения и общие UI-паттерны.
 
-Deliverables:
+---
 
-1. Next.js App Router structure
-   - `app/` routes
-   - `components/` UI
-   - `lib/` game logic + supabase client
-   - `hooks/` player profile + realtime room loader
-   - `types/` shared TypeScript types
-2. Dark theme by default + mobile-first layout baseline
-3. Reusable UI parts: `AvatarPicker`, `PlayerBadge`, `CountdownTimer`
+## Deliverables
 
-Current status:
+1. Структура Next.js App Router: `app/`, `components/`, `lib/`, `hooks/`, `types/`
+2. Тёмная тема, mobile-first
+3. Переиспользуемые компоненты: **`AvatarPicker`**, **`PlayerBadge`**
 
-- выполнено в коде (см. `app/`, `components/`, `lib/`, `hooks/`, `types/`).
+---
+
+## Статус
+
+**Done** — см. репозиторий.

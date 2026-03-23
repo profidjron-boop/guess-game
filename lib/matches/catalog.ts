@@ -234,6 +234,18 @@ export function getMatchBySlug(slug: string) {
   return MATCHES.find((m) => m.slug === slug) ?? null;
 }
 
+/** Catalog match.category (hockey, cs2, …) → sport/cyber for rounds and UI. */
+export function matchCatalogCategoryToSportCyber(
+  raw: string | null | undefined
+): "sport" | "cyber" | null {
+  if (raw == null || raw === "") return null;
+  const sport = new Set<string>(["hockey", "football", "boxing", "tennis"]);
+  const cyber = new Set<string>(["cs2", "dota2", "valorant"]);
+  if (sport.has(raw)) return "sport";
+  if (cyber.has(raw)) return "cyber";
+  return null;
+}
+
 export function categoryLabel(category: MatchCategory) {
   switch (category) {
     case "football":

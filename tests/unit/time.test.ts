@@ -1,10 +1,5 @@
-import { describe, expect, it, vi } from "vitest";
-import {
-  computeDeltaMs,
-  computePressTimeMs,
-  generateEventTimeMs,
-  msToCountdown,
-} from "@/lib/game/time";
+import { describe, expect, it } from "vitest";
+import { computeDeltaMs, computePressTimeMs, msToCountdown } from "@/lib/game/time";
 
 describe("time utils", () => {
   it("converts milliseconds to countdown format", () => {
@@ -21,13 +16,5 @@ describe("time utils", () => {
   it("computes delta correctly", () => {
     expect(computeDeltaMs(4500, 4000)).toBe(500);
     expect(computeDeltaMs(3000, 4000)).toBe(-1000);
-  });
-
-  it("generates event time inside allowed bounds", () => {
-    vi.spyOn(Math, "random").mockReturnValue(0.5);
-    const value = generateEventTimeMs(10_000);
-    expect(value).toBeGreaterThanOrEqual(3000);
-    expect(value).toBeLessThan(8500);
-    vi.restoreAllMocks();
   });
 });

@@ -9,9 +9,10 @@ import { supabase } from "@/lib/supabase/client";
 import type { RealtimeChannel } from "@supabase/supabase-js";
 import type { Guess, Participant, Round, Room, RoundTemplate } from "@/types/game";
 import PlayerBadge from "@/components/PlayerBadge";
-import CountdownTimer from "@/components/CountdownTimer";
 import { usePlayerProfile } from "@/hooks/usePlayerProfile";
 import { isRoundReadyForGuess } from "@/lib/game/time";
+import { formatUnknownError } from "@/lib/formatError";
+import { matchCatalogCategoryToSportCyber } from "@/lib/matches/catalog";
 
 type GuessWithFlag = Guess & { hasGuess: true };
 type NoGuess = { hasGuess: false };
@@ -260,6 +261,13 @@ export default function RoomScreen() {
     return rounds.find((r) => r.status === "running") ?? null;
   }, [rounds]);
 
+  /** Спорт/кибер для UI: из матча комнаты, иначе из шаблона раунда (legacy). */
+  const displayRoundSportCyber = useMemo((): "sport" | "cyber" => {
+    const fromMatch = matchCatalogCategoryToSportCyber(room?.match_category);
+    if (fromMatch) return fromMatch;
+    return runningRound?.category ?? "sport";
+  }, [room?.match_category, runningRound?.category]);
+
   const lastEndedRound = useMemo(() => {
     const ended = rounds.filter((r) => r.status === "ended");
     if (ended.length === 0) return null;
@@ -377,16 +385,17 @@ export default function RoomScreen() {
       if (error) throw error;
       scheduleRefresh();
     } catch (e: unknown) {
-      const raw = e instanceof Error ? e.message : String(e ?? "");
-      const n = raw.toLowerCase();
+      const raw = formatUnknownError(e).toLowerCase();
+      const n = raw;
       if (n.includes("not_host")) {
         setSubmitMessage("Только хост может отметить момент события.");
       } else if (n.includes("event_already_marked")) {
         setSubmitMessage("Событие уже отмечено.");
-      } else if (n.includes("too_late_to_mark")) {
-        setSubmitMessage("Окно раунда истекло — нельзя отметить событие.");
       } else {
-        setSubmitMessage(`Не удалось отметить событие: ${raw.slice(0, 120)}`);
+        const msg = formatUnknownError(e);
+        setSubmitMessage(
+          `Не удалось отметить событие: ${msg.slice(0, 120)}${msg.length > 120 ? "…" : ""}`
+        );
       }
     } finally {
       setMarkingEvent(false);
@@ -427,8 +436,8 @@ export default function RoomScreen() {
         });
       }
     } catch (e: unknown) {
-      const raw = e instanceof Error ? e.message : String(e ?? "");
-      const normalized = raw.toLowerCase();
+      const msg = formatUnknownError(e);
+      const normalized = msg.toLowerCase();
 
       if (normalized.includes("already_guessed")) {
         setSubmitMessage("Ответ принят. Ожидаем результат раунда.");
@@ -438,8 +447,6 @@ export default function RoomScreen() {
         setSubmitMessage("Раунд ещё не стартовал на сервере.");
       } else if (normalized.includes("round_not_found")) {
         setSubmitMessage("Раунд не найден. Обновите страницу.");
-      } else if (normalized.includes("too_late")) {
-        setSubmitMessage("Слишком поздно: окно раунда закрыто.");
       } else if (normalized.includes("participant_not_in_room")) {
         setSubmitMessage("Игрок не найден в текущей комнате.");
       } else if (
@@ -450,9 +457,13 @@ export default function RoomScreen() {
         setSubmitMessage(
           "Нет прав на серверную функцию в Supabase. Выполните GRANT на submit_guess_server для роли anon (см. schema.sql)."
         );
+      } else if (normalized.includes("null value") && normalized.includes("delta_ms")) {
+        setSubmitMessage(
+          "Ошибка схемы БД: колонка delta_ms не допускает NULL. Выполните миграцию из supabase/schema.sql (DO-блок для guesses.delta_ms)."
+        );
       } else {
         setSubmitMessage(
-          `Не удалось отправить нажатие: ${raw.slice(0, 120)}${raw.length > 120 ? "…" : ""}`
+          `Не удалось отправить нажатие: ${msg.slice(0, 200)}${msg.length > 200 ? "…" : ""}`
         );
       }
     } finally {
@@ -508,7 +519,7 @@ export default function RoomScreen() {
           room_id: roomId,
           round_number: t.round_number,
           title: room.event_label ?? t.title,
-          category: t.category,
+          category: matchCatalogCategoryToSportCyber(room.match_category) ?? t.category,
           duration_ms: durationMs,
           event_time_ms: null,
           status: "pending",
@@ -1041,8 +1052,8 @@ export default function RoomScreen() {
                   Раундов: {room.total_rounds}. Очки и прогресс считаются на сервере.
                 </div>
                 <div className="mt-3 p-3 rounded-xl border border-sky-400/20 bg-sky-500/10 text-xs text-sky-100/95 leading-relaxed">
-                  После «Запустить игру» все ждут <b>событие на трансляции</b>. Таймер в игре —
-                  только служебное окно для приёма нажатий между игроками, а не «часы матча».
+                  После «Запустить игру» все ждут <b>событие на трансляции</b>. Ориентир — картинка
+                  и звук эфира, не интерфейс.
                 </div>
               </div>
             </div>
@@ -1116,8 +1127,7 @@ export default function RoomScreen() {
                 <p className="mt-2 text-sm text-zinc-200 leading-relaxed">
                   Смотрите матч на <b>другом экране</b>. Нажимайте «СЕЙЧАС!», когда <b>видите</b>{" "}
                   событие для вашей команды. <b>Хост</b> отдельно отмечает момент этого события на
-                  трансляции — эталон для очков. Полоска внизу — служебное окно между игроками, не
-                  «часы матча».
+                  трансляции — эталон для очков.
                 </p>
               </div>
 
@@ -1131,10 +1141,10 @@ export default function RoomScreen() {
                     {runningRound.round_number} / {room.total_rounds} •{" "}
                     <span
                       className={
-                        runningRound.category === "sport" ? "text-sky-200" : "text-fuchsia-200"
+                        displayRoundSportCyber === "sport" ? "text-sky-200" : "text-fuchsia-200"
                       }
                     >
-                      {runningRound.category === "sport" ? "Спорт" : "Киберспорт"}
+                      {displayRoundSportCyber === "sport" ? "Спорт" : "Киберспорт"}
                     </span>
                   </div>
                   {room.match_title ? (
@@ -1185,7 +1195,6 @@ export default function RoomScreen() {
                 <div className="mt-1 text-sm text-zinc-100">
                   Держите этот экран рядом с трансляцией. В момент события для{" "}
                   <b>{myParticipant?.selected_team ?? "вашей команды"}</b> нажмите <b>«СЕЙЧАС!»</b>.
-                  Не ориентируйтесь на полоску внизу — она не отражает время эфира.
                 </div>
               </div>
 
@@ -1263,14 +1272,10 @@ export default function RoomScreen() {
                 </AnimatePresence>
               </div>
 
-              <div className="mt-4">
-                <CountdownTimer round={runningRound} variant="compact" />
-              </div>
-
               <div className="mt-4 text-xs text-zinc-400">
                 {myGuess
                   ? "Ожидаем результат раунда."
-                  : "Один ответ за раунд. Ориентир — эфир, не полоска выше."}
+                  : "Один ответ за раунд. Ориентир — трансляция."}
               </div>
               {submitMessage ? (
                 <div className="mt-2 text-xs px-3 py-2 rounded-xl border border-amber-400/30 bg-amber-500/10 text-amber-200">

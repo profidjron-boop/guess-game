@@ -1,31 +1,29 @@
-# GUESS_DUEL_EPIC_PACK_02_MULTIPLAYER_REALTIME_v1_0
+# GUESS_DUEL_EPIC_PACK_02 — Multiplayer + Realtime
 
-Objective (Database + seed + realtime):
+**Version:** v1.2  
+**Date:** 2026-03-24
 
-- сделать полноценный многопользовательский контур через Supabase Realtime.
+**Objective:** данные Supabase, RPC, синхронизация комнаты.
 
-Deliverables:
+---
 
-1. Supabase schema
-   - `public.rooms`, `public.participants`, `public.round_templates`, `public.rounds`, `public.guesses`, `public.leaderboard`
-2. Seed data
-   - 5 round templates (Гол/Удар/Килл/Нокаут/Пойнт/Фраг)
-3. Server functions
-   - `submit_guess_server` (серверный press; `delta_ms` после эталона)
-   - `mark_round_event` (хост фиксирует эталон → пересчёт дельт → `apply_round_results` / следующий раунд / `finalize_game`)
-   - `apply_round_results` (winner + streak/multiplier + update participants.score)
-   - `finalize_game` (write leaderboard row)
-4. Realtime channels
-   - UI подписывается на изменения `rooms`, `participants`, `rounds`
+## Deliverables
 
-Status:
+1. Схема: `rooms`, `participants`, `round_templates`, `rounds`, `guesses`, `leaderboard` (+ match-centric таблицы при использовании каталога из БД).
+2. Seed: шаблоны раундов в `round_templates`.
+3. Функции: **`submit_guess_server`**, **`mark_round_event`**, **`apply_round_results`**, **`finalize_game`**, **`compute_base_points`**.
+4. **Без** отсечения по `duration_ms` в `submit_guess_server` / `mark_round_event` (см. актуальный `schema.sql`).
+5. Realtime: подписки в **`RoomScreen`** на `rooms`, `participants`, `rounds`.
+6. RLS для guest — в **`supabase/schema.sql`**.
 
-- implemented (см. `supabase/schema.sql` и realtime hook/logic в `RoomScreen`).
+---
 
-Follow-ups:
+## Статус
 
-- внешний сигнал эфира вместо ручной отметки хоста (future scope).
+**Done** — см. `supabase/schema.sql` и `components/RoomScreen.tsx`.
 
-Closed:
+---
 
-- strict серверный press через `submit_guess_server`; RLS guest-mode в `schema.sql`.
+## Follow-up (не в scope v1)
+
+- Внешний сигнал эфира вместо ручного эталона хоста.

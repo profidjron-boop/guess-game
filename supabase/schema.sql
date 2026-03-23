@@ -251,14 +251,62 @@ begin
   from scored s
   where p.room_id = s.room_id and p.player_id = s.player_id;
 
+  -- Same CTE chain must repeat: WITH scopes only a single SQL statement in PL/pgSQL.
   -- Store per-round points for guessed players (used in round results screen)
+  with finalized as (
+    select
+      p.room_id,
+      p.player_id,
+      p.streak as old_streak,
+      case
+        when g.delta_ms is null then false
+        when abs(g.delta_ms) <= 1000 and g.delta_ms >= 0 then true
+        else false
+      end as is_exact,
+      case
+        when g.delta_ms is null then 0
+        else public.compute_base_points(g.delta_ms)
+      end as base_points,
+      case
+        when g.delta_ms is null then 0
+        when abs(g.delta_ms) <= 1000 and g.delta_ms >= 0 then p.streak + 1
+        else 0
+      end as new_streak
+    from public.participants p
+    left join public.guesses g
+      on g.room_id = p.room_id
+     and g.round_id = p_round_id
+     and g.player_id = p.player_id
+    where p.room_id = p_room_id
+  ),
+  scored as (
+    select
+      room_id,
+      player_id,
+      old_streak,
+      is_exact,
+      base_points,
+      new_streak,
+      case
+        when new_streak = 2 then 1.5
+        when new_streak >= 3 then 2.0
+        else 1.0
+      end as multiplier,
+      trunc((base_points::numeric) * (
+        case
+          when new_streak = 2 then 1.5
+          when new_streak >= 3 then 2.0
+          else 1.0
+        end
+      ) )::integer as round_points
+    from finalized
+  )
   update public.guesses g
   set points = s.round_points
   from scored s
   where g.room_id = s.room_id
     and g.round_id = p_round_id
-    and g.player_id = s.player_id
-    and g.round_id = p_round_id;
+    and g.player_id = s.player_id;
 end;
 $$;
 
@@ -380,9 +428,7 @@ begin
     floor(extract(epoch from (clock_timestamp() - v_round.started_at)) * 1000)::integer
   );
 
-  if v_press_time_ms > v_round.duration_ms then
-    raise exception 'too_late';
-  end if;
+  -- Без лимита по duration_ms: ориентир только на трансляцию и эталон хоста (mark_round_event).
 
   if v_round.event_time_ms is not null then
     v_delta_ms := v_press_time_ms - v_round.event_time_ms;
@@ -456,9 +502,7 @@ begin
     floor(extract(epoch from (clock_timestamp() - v_round.started_at)) * 1000)::integer
   );
 
-  if v_event_ms > v_round.duration_ms then
-    raise exception 'too_late_to_mark';
-  end if;
+  -- Без лимита по duration_ms: хост может отметить эталон в любой момент после старта раунда.
 
   update public.rounds
   set event_time_ms = v_event_ms

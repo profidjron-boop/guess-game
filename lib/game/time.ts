@@ -16,13 +16,6 @@ export function computeDeltaMs(pressTimeMs: number, eventTimeMs: number) {
   return Math.round(pressTimeMs - eventTimeMs);
 }
 
-export function generateEventTimeMs(durationMs: number) {
-  // Keep enough space for players to press and for early clicks to be possible.
-  const min = Math.floor(durationMs * 0.3);
-  const max = Math.floor(durationMs * 0.85);
-  return Math.floor(min + Math.random() * (Math.max(min + 1, max) - min));
-}
-
 /** Раунд принимает нажатия после старта; эталон события на эфире задаётся отдельно (mark_round_event). */
 export function isRoundReadyForGuess(round: Round | null) {
   return !!round && round.status === "running" && !!round.started_at;

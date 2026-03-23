@@ -1,83 +1,78 @@
-# GUESS_DUEL_PROJECT_STATE_v1_1
+# GUESS_DUEL_PROJECT_STATE
 
-Project: Guess Duel  
-Client: viewers (sports + esports broadcasts)  
-Project type: browser multiplayer game (guest mode, no auth)
+**Project:** Guess Duel  
+**Type:** browser multiplayer, guest mode (no auth)  
+**Audience:** зрители спортивных и киберспортивных трансляций
 
-Stage: fan-mode implementation completed  
-Status: release-ready  
-Owner: greka  
-Date: 2026-03-23  
-Updated: 2026-03-24 (docs+qa+license sync)
+**Stage:** fan-mode реализован  
+**Status:** release-ready  
+**Owner:** greka
 
----
-
-## 1) Product discovery
-
-Goal: дать зрителям соревноваться в точности угадывания момента события по конкретному матчу и выбранной команде (second-screen companion experience).
-
-Primary user actions:
-
-- выбор матча из каталога и фильтров
-- выбор команды, за которую болеет пользователь
-- выбор события (goal/first blood/ace и др. в контексте команды)
-- создание/вход в комнату по матчу
-- игра в realtime с контекстом матча на экране
-- просмотр результатов и итогов по конкретному матчу
+**Updated:** 2026-03-24 (документация v1.3, механика без таймера окна)
 
 ---
 
-## 2) Current governing artifact
+## 1) Продукт
 
-Текущий governing TZ:
+**Цель:** second-screen соревнование в точности момента события (гол, килл и т.д.) по выбранному матчу и команде.
 
-- `GUESS_DUEL_READY_TZ_v1_0.md` (заголовок версии v1.1)
+**Основные действия пользователя:**
 
-Архитектурные и data governing документы:
-
-- `GUESS_DUEL_SCHEMA_DATA_MODEL_PACK_v1_0.md`
-- `GUESS_DUEL_ADR_PACK_v1_0.md`
-- `GUESS_DUEL_API_CONTRACT_PACK_v1_0.md`
-
----
-
-## 3) Current delivery shape (slice snapshot)
-
-Выполнено:
-
-1. Fan-centric UX flow: `matches list -> match page -> team side selection -> room -> gameplay`.
-2. Матчевый контекст внедрен в room/game/results/final экраны.
-3. Расширена Supabase schema под match-centric модель (`matches`, `match_event_templates`, room/participant/round context fields).
-4. Realtime, scoring, server-side anti-cheat и round finalize сохранены без регрессий.
-5. Эталон события на трансляции: хост вызывает `mark_round_event`; `event_time_ms` до отметки `null`; `delta_ms` у guess заполняется после эталона; раунды не продвигаются клиентским таймером `sleep`.
-6. Production URL развернут: `https://guess-duel.vercel.app`.
+- каталог матчей → карточка матча → выбор стороны и типа события
+- комната по коду/ссылке с контекстом матча
+- игровой экран: **`СЕЙЧАС!`** + у хоста — **эталон на эфире** (`mark_round_event`)
+- результаты раундов, финал, глобальный leaderboard
 
 ---
 
-## 4) Constraints / non-negotiables
+## 2) Источники правды
 
-- Темный стиль с повышенным контрастом (читабельность first-screen и игровых экранов)
-- Mobile-first интерфейс, крупная кнопка `СЕЙЧАС!`
-- Stage-chain: matches -> match -> room wait -> playing -> round results -> finished -> leaderboard
-- Истина по очкам и winner раунда: вычисление и фиксация на сервере (RPC/DB function)
-- Rounds: 5 раундов, одно нажатие за раунд
+| Артефакт       | Файл                                        |
+| -------------- | ------------------------------------------- |
+| Границы scope  | `GUESS_DUEL_READY_TZ_v1_0.md`               |
+| Решения        | `GUESS_DUEL_ADR_PACK_v1_0.md`               |
+| Схема БД       | `GUESS_DUEL_SCHEMA_DATA_MODEL_PACK_v1_0.md` |
+| RPC / Realtime | `GUESS_DUEL_API_CONTRACT_PACK_v1_0.md`      |
 
----
-
-## 5) Blocking open questions
-
-Критичных блокеров нет. Рабочие follow-ups:
-
-1. Расширить e2e покрытия на матчевый пользовательский сценарий.
-2. Добавить интеграцию с live-stream iframe и внешними match API (future scope).
+Указатель всех документов: `GUESS_DUEL_DOCUMENT_INDEX_v1_0.md`.
 
 ---
 
-## 6) Release evidence
+## 3) Что сделано (snapshot)
 
-- Production: `https://guess-duel.vercel.app`
-- Code baseline: `main` branch; fan-flow: `f17102b`, `29934a8`; механика эталона на эфире: `5e01684` и актуальный `supabase/schema.sql`.
-- Supabase schema: applied (user-confirmed) from `supabase/schema.sql`.
-- QA baseline executed: `format:check`, `lint`, `test:unit`, `test:e2e`, `build`, `audit:deps`, `test:load`.
-- Re-validation after second-screen UX adjustment (2026-03-24): all checks passed.
-- Legal status: proprietary distribution (`UNLICENSED`, root `LICENSE`).
+1. Поток: **matches → match → room → gameplay → final → leaderboard**.
+2. Матчевый контекст в room / game / results / final.
+3. Supabase: `matches`, `match_event_templates`, поля контекста в `rooms` / `participants` / `rounds`.
+4. Realtime на `rooms`, `participants`, `rounds`; дебаунс обновлений в UI.
+5. **Эталон на эфире:** только хост, RPC `mark_round_event`; до отметки `event_time_ms` и `delta_ms` (у guess) могут быть `null`.
+6. **Без таймера окна раунда** в интерфейсе; в RPC **нет** отсечения по `duration_ms` для `submit_guess_server` / `mark_round_event` (значение в шаблонах/раундах остаётся данными).
+7. Сообщения об ошибках RPC через **`lib/formatError.ts`** (нет сырого `[object Object]`).
+8. Production: **`https://guess-duel.vercel.app`**.
+
+---
+
+## 4) Неготово нарушать
+
+- Тёмная тема, контраст, mobile-first, крупная кнопка **`СЕЙЧАС!`**.
+- Цепочка экранов: matches → match → lobby room → playing → round modal → finished → leaderboard.
+- Очки и победитель раунда — **только** через серверные функции (RPC/БД).
+- 5 раундов за игру, **одно** нажатие `СЕЙЧАС!` на раунд на игрока.
+
+---
+
+## 5) Открытые улучшения (не блокеры)
+
+1. Расширить e2e по fan-flow (матч → комната → несколько раундов).
+2. Внешний сигнал эфира / API матча вместо ручного эталона хоста.
+3. Наблюдаемость (ошибки/метрики) в production.
+
+---
+
+## 6) Релиз и соответствие
+
+- **URL:** `https://guess-duel.vercel.app`
+- **Ветка:** `main`
+- **База:** применён `supabase/schema.sql` (включая актуальные тела функций).
+- **Env (Vercel):** `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`.
+- **Проверки:** `npm run verify:desm` — см. `docs/DESM_VERIFY.md`.
+- **Лицензия:** проприетарная (`UNLICENSED`, см. `LICENSE`).

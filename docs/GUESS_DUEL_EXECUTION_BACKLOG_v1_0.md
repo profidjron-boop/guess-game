@@ -1,75 +1,48 @@
-# GUESS_DUEL_EXECUTION_BACKLOG_v1_1
+# GUESS_DUEL_EXECUTION_BACKLOG
 
-- Version: v1.1
-- Date: 2026-03-23
-- Project: Guess Duel
+**Version:** v1.2  
+**Date:** 2026-03-24  
+**Project:** Guess Duel
 
----
-
-## 1) Epic backlog status
-
-### Epic 01 — Foundation
-
-Deliverables:
-
-- UI baseline, TS types, supabase client wrapper
-- scoring utilities in `lib/game/*`
-
-Status: done (core implemented)
-
-### Epic 02 — Database + seed
-
-Deliverables:
-
-- SQL schema + indexes + seed `round_templates`
-- DB functions:
-  - `compute_base_points`
-  - `submit_guess_server`
-  - `mark_round_event`
-  - `apply_round_results`
-  - `finalize_game`
-
-Status: done
-
-### Epic 03 — Fan-centric UX and gameplay context
-
-Deliverables:
-
-- matches list + match page + team side selection
-- room/game/results/final with match/event/team context
-- realtime sync for rooms/participants/rounds
-- host controls round start + **эталон на эфире** (`mark_round_event`) + server-side finalize chain
-
-Status: done
-
-### Epic 04 — Release & hardening
-
-Deliverables:
-
-- RLS policies for guest-mode
-- strict server time validation
-- test strategy + smoke runbook
-- ensure build on vercel with env vars
-- schema extension for match-centric model
-
-Status: done
-
-Done:
-
-- RLS guest policies добавлены в `supabase/schema.sql`.
-- Server-side submit path реализован через `submit_guess_server`.
-- Build/readme/env readiness закрыты.
-- Match-centric schema extension добавлена (`matches`, `match_event_templates`, room/participant/round fields).
-- Production deployment активен: `https://guess-duel.vercel.app`.
-
-Open:
-
-- Расширить automated e2e/regression suite на fan-flow.
+Сводка эпиков и зависимостей. Детали — в соответствующих `EPIC_PACK_*`.
 
 ---
 
-## 2) Dependency notes
+## 1) Статус эпиков
 
-- Supabase tables must exist before UI connects.
-- Realtime must be enabled for the relevant tables.
-- Client profile must be created in localStorage before room operations.
+### Epic 01 — Foundation — **done**
+
+- Структура Next.js, типы, `lib/supabase/client`, `lib/game/*`, хуки профиля и комнаты
+- UI: `AvatarPicker`, `PlayerBadge`, тёмная тема
+
+### Epic 02 — Database + Realtime — **done**
+
+- `supabase/schema.sql`: таблицы, RLS, индексы, seed
+- Функции: `compute_base_points`, `submit_guess_server`, `mark_round_event`, `apply_round_results`, `finalize_game`
+- Realtime: подписки в `RoomScreen`
+
+### Epic 03 — Fan UX + gameplay — **done**
+
+- Маршруты матчей, комната, контекст матча на экранах
+- Хост: старт игры, **`mark_round_event`**
+- Ошибки RPC: **`lib/formatError.ts`**
+
+### Epic 04 — Release — **done**
+
+- README, `.env.example`, CI, Vercel
+- RLS guest, `verify:desm`
+
+---
+
+## 2) Открыто (не блокирует релиз)
+
+- Расширить **e2e** на полный сценарий: матч → комната → несколько раундов с эталоном хоста
+
+---
+
+## 3) Зависимости окружения
+
+1. В Supabase применён актуальный **`supabase/schema.sql`**.
+2. В Vercel заданы **`NEXT_PUBLIC_SUPABASE_URL`** и **`NEXT_PUBLIC_SUPABASE_ANON_KEY`**.
+3. Realtime включён для таблиц игрового цикла (см. корневой README).
+4. У клиента создан профиль (localStorage) перед операциями в комнате.

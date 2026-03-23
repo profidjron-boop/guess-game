@@ -1,90 +1,48 @@
-# GUESS_DUEL_BUILD_PLAN_v1_1
+# GUESS_DUEL_BUILD_PLAN
 
-- Version: v1.1
-- Status: executed
-- Date: 2026-03-23
-- Project: Guess Duel
+**Version:** v1.2 (архивный снимок)  
+**Status:** executed — все фазы закрыты  
+**Date:** 2026-03-24  
+**Project:** Guess Duel
+
+Документ фиксирует **исторический** порядок работ. Текущее состояние продукта — в **`GUESS_DUEL_PROJECT_STATE_v1_0.md`** и **`docs/README.md`**.
 
 ---
 
-## 1) Header / Execution frame
+## 1) Стек
 
-Stack authority:
-
-- Next.js 16 App Router + TypeScript
-- Tailwind CSS + Framer Motion
+- Next.js 16 App Router, TypeScript, Tailwind, Framer Motion
 - Supabase Postgres + Realtime
+- Vercel
 
-Delivery mode: local run + Vercel deploy
-Game scope guard:
+**Инварианты механики (финал):**
 
-- 5 раундов, одно нажатие за раунд
-- кнопка `СЕЙЧАС!`; эталон `event_time_ms` задаёт хост через `mark_round_event` (демо: момент на трансляции)
-- очки и winner раунда фиксируются на стороне сервера (DB function)
-
----
-
-## 2) Phase plan (engineering order)
-
-### Phase 0 — Architecture + repository baseline
-
-Deliver:
-
-- структура проекта `app/ components/ lib/ hooks/ types/`
-- подключение Supabase client без падения на `next build`
-- единый scoring/util modules
-
-### Phase 1 — Database + SQL schema
-
-Deliver:
-
-- `supabase/schema.sql` (tables, indexes, scoring functions, seed round templates)
-- seed: 5 раундов (Гол/Удар/Килл/Нокаут/Пойнт/Фраг)
-
-### Phase 2 — Match-centric entry
-
-Deliver:
-
-- каталог матчей с фильтрами/поиском/статусами
-- страница матча с выбором команды и события
-- создание/вход в room из контекста выбранного матча
-
-### Phase 3 — Core game mechanics
-
-Deliver:
-
-- игровой экран: `Match + League + Selected Team + Event` + `СЕЙЧАС!`
-- server-side submit/scoring path через RPC + finalize functions
-- modal результатов раунда с матчевым контекстом
-
-### Phase 4 — Realtime sync + leaderboard(s)
-
-Deliver:
-
-- realtime channels на rooms/participants/rounds
-- global leaderboard: топ-20 + фильтр спорт/киберспорт/все
-- per-match leaderboard и список комнат на странице матча
-
-### Phase 5 — UX polish + release readiness
-
-Deliver:
-
-- high-contrast dark theme mobile-first layout
-- Framer Motion transitions
-- README: env + install + supabase setup + vercel deploy
-- checklist перед деплоем (см. test strategy)
+- 5 раундов, одно нажатие **`СЕЙЧАС!`** на игрока на раунд
+- Эталон **`event_time_ms`** — хост, **`mark_round_event`**
+- Очки / победитель — серверные функции
+- Без таймера окна раунда в UI; без лимита по **`duration_ms`** в RPC нажатий и эталона
 
 ---
 
-## 3) Stop-gates (release BLOCKED if)
+## 2) Фазы (выполнено)
 
-- realtime не синхронизирует состояние игры между вкладками
-- нарушен расчет очков/серий/победителя раунда
-- нет законченного интерфейса всех обязательных экранов
+| Фаза | Содержание                                                                                   |
+| ---- | -------------------------------------------------------------------------------------------- |
+| 0    | Каркас: `app/`, `components/`, `lib/`, `hooks/`, `types/`; Supabase client без падения build |
+| 1    | `supabase/schema.sql`: таблицы, индексы, RPC, seed `round_templates`                         |
+| 2    | Каталог матчей, страница матча, вход в комнату с контекстом матча                            |
+| 3    | Игровой экран, RPC submit / mark / apply / finalize, модалки                                 |
+| 4    | Realtime, leaderboard                                                                        |
+| 5    | Тема, motion, README, DESM, деплой                                                           |
 
 ---
 
-## 4) Current milestone
+## 3) Stop-gates (исторические)
 
-Выполнено: Phase 0..5.
-Далее: только future improvements (live API, stream embed, расширенный e2e).
+Релиз был бы заблокирован при: поломке realtime, неверном подсчёте очков, отсутствии обязательных экранов — на момент закрытия плана это проверено.
+
+---
+
+## 4) Дальнейшая работа
+
+См. **Future improvements** в корневом `README.md` и раздел open questions в **Project State**.

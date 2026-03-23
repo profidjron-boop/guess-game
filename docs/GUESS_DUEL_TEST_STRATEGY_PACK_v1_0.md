@@ -1,113 +1,41 @@
-# GUESS_DUEL_TEST_STRATEGY_PACK_v1_1
+# GUESS_DUEL_TEST_STRATEGY_PACK
 
-Version: v1.1  
-Date: 2026-03-24  
-Project: Guess Duel
-
----
-
-## 1) What to test (must-have)
-
-1. Очки и серии (согласованность)
-
-- base points: окна delta (0-500, 501-1000, 1001-2000, 2001-5000, >5000)
-- ранний клик: delta_ms < 0 => -100
-- streak/multiplier:
-  - 2 точных подряд => x1.5
-  - 3+ точных подряд => x2
-
-2. Winner раунда
-
-- минимальный |delta_ms| среди игроков с **не-null** `delta_ms` (после `mark_round_event`)
-
-3. Сценарий 5 раундов
-
-- хост стартует только при status `waiting`
-- игроки жмут `СЕЙЧАС!` (press фиксируется; до эталона `delta_ms` = null)
-- хост фиксирует эталон (`mark_round_event`) → дельты, очки, modal, следующий раунд или финал
-- кнопка у игрока блокируется после первого press в раунде
-
-4. Realtime sync
-
-- состояние комнаты видно в 2-3 вкладках (rooms/participants/rounds)
-
-5. Leaderboard
-
-- после финала происходит запись в `leaderboard`
-- UI показывает топ-20 и фильтр по category
+**Version:** v1.2  
+**Date:** 2026-03-24  
+**Project:** Guess Duel
 
 ---
 
-## 2) Suggested test pyramid
+## 1) Обязательные проверки (продукт)
 
-1. Unit
-
-- тесты TS для scoring utilities (`lib/game/scoring.ts`) и времени
-
-2. Integration
-
-- SQL smoke: после `mark_round_event` (или прямой вызов `apply_round_results` в тестовой среде) проверить обновления participants.score/streak
-
-3. E2E
-
-- Playwright: 2 гостя в разных вкладках
-- симуляция press timing (в пределах допуска) и проверка winner/score
+1. **Очки и серии** — соответствие `lib/game/scoring.ts` и логике в БД (окна delta, ранний клик -100, множители серии).
+2. **Победитель раунда** — минимальный `|delta_ms|` среди guess с **не-null** `delta_ms`.
+3. **Сценарий игры** — хост стартует из `waiting`; игроки жмут **`СЕЙЧАС!`**; хост — **`mark_round_event`**; модалка; следующий раунд или финал; одно нажатие на игрока за раунд.
+4. **Realtime** — две вкладки, одна комната, согласованные `rooms` / `participants` / `rounds`.
+5. **Leaderboard** — запись после `finalize_game`, UI топ-20 и фильтр.
+6. **Нет таймера окна** — UI не показывает обратный отсчёт по `duration_ms`; сервер не отклоняет нажатие/эталон из-за «истечения окна» по `duration_ms`.
 
 ---
 
-## 3) Release verification checklist (smoke)
+## 2) Пирамида тестов
 
-1. `npm run build` проходит при наличии env в CI/локально
-2. Realtime:
-   - создать комнату, подключить 2 игрока, убедиться в synchronized списке
-3. Gameplay:
-   - хост стартует игру
-   - в каждом раунде хост отмечает эталон; раунды идут без зависаний
-4. Finishing:
-   - финальный screen показывает топ-3 и таблицу
-5. Leaderboard:
-   - top-20 обновляется после игры
+| Уровень     | Что                                                       |
+| ----------- | --------------------------------------------------------- |
+| Unit        | `scoring.ts`, `time.ts`, `formatError.ts` — Vitest        |
+| Integration | При необходимости — SQL против тестовой БД                |
+| E2E         | Playwright — смок по каталогу матчей (`npm run test:e2e`) |
 
 ---
 
-## 4) Executed QA baseline (verified)
+## 3) Smoke перед выкладкой
 
-Обязательный минимум из продуктового чек-листа закрыт:
+1. `npm run verify:desm` — см. **`docs/DESM_VERIFY.md`**.
+2. Ручной смок: комната → игра → эталон хоста → завершение раунда.
 
-1. Linter + formatter:
+---
 
-- `npm run format:check` -> passed
-- `npm run lint` -> passed
+## 4) Зафиксированные прогоны (ориентир)
 
-2. Unit/integration:
+Команды: `format:check`, `lint`, `test:unit`, `build`, `audit:deps`, `test:e2e`; опционально `test:load` с k6 при поднятом `next start` на :3000.
 
-- `npm run test:unit` -> passed (Vitest, 3 files / 9 tests)
-
-3. E2E smoke:
-
-- `npm run test:e2e` -> passed (актуализирован под экран "Матчи")
-
-4. Build/type safety:
-
-- `npm run build` -> passed
-
-5. Dependency security:
-
-- `npm run audit:deps` -> passed (0 vulnerabilities)
-
-6. Basic load:
-
-- `npm run test:load` -> passed (k6, 10 VU / 30s)
-- thresholds:
-  - `http_req_failed < 1%` -> passed (`0.00%`)
-  - `http_req_duration p(95) < 600ms` -> passed (`9.71ms`)
-
-7. Re-validation run (2026-03-24, post-UX update):
-
-- `format:check`, `lint`, `test:unit`, `test:e2e`, `build`, `audit:deps`, `test:load` -> passed
-- load p95 on re-run: `23.62ms`, error rate: `0.00%`
-
-8. DESM единый прогон (2026-03-24):
-
-- Добавлена команда `npm run verify:desm` (см. `docs/DESM_VERIFY.md`): все шаги из п.1–5 + e2e за один вызов — **passed**
-- `npm run verify:desm:load` (= `test:load`) при поднятом сервере на :3000 — **passed** (p95 ~9.3ms, `http_req_failed=0%`)
+Актуализируйте дату в этом разделе после значимых изменений CI или зависимостей.

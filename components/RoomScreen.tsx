@@ -91,11 +91,14 @@ export default function RoomScreen() {
   const [loading, setLoading] = useState(true);
   const [connStatus, setConnStatus] = useState<"connected" | "reconnecting" | "disconnected">("reconnecting");
   const [startingGame, setStartingGame] = useState(false);
+  const [submitMessage, setSubmitMessage] = useState<string | null>(null);
+  const [submittingGuess, setSubmittingGuess] = useState(false);
 
   const refreshLockRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const roundStartLoopRef = useRef(false);
   const refreshInFlightRef = useRef(false);
   const refreshQueuedRef = useRef(false);
+  const submitLockRef = useRef(false);
 
   const myParticipant = useMemo(() => {
     if (!playerId) return null;
@@ -340,8 +343,12 @@ export default function RoomScreen() {
     if (!room || !runningRound || !playerId) return;
     if (!isRoundReadyForGuess(runningRound)) return;
     if (myGuess) return; // already pressed
+    if (submitLockRef.current || submittingGuess) return;
 
     try {
+      submitLockRef.current = true;
+      setSubmittingGuess(true);
+      setSubmitMessage(null);
       const { data, error } = await supabase.rpc("submit_guess_server", {
         p_room_id: room.id,
         p_round_id: runningRound.id,
@@ -365,8 +372,24 @@ export default function RoomScreen() {
           created_at: new Date().toISOString(),
         });
       }
-    } catch {
-      // ignore unique constraint errors (double click)
+    } catch (e: unknown) {
+      const raw = e instanceof Error ? e.message : String(e ?? "");
+      const normalized = raw.toLowerCase();
+
+      if (normalized.includes("already_guessed")) {
+        setSubmitMessage("Нажатие уже зафиксировано для этого раунда.");
+      } else if (normalized.includes("round_not_running")) {
+        setSubmitMessage("Раунд уже завершен или еще не начался.");
+      } else if (normalized.includes("too_late")) {
+        setSubmitMessage("Слишком поздно: окно раунда закрыто.");
+      } else if (normalized.includes("participant_not_in_room")) {
+        setSubmitMessage("Игрок не найден в текущей комнате.");
+      } else {
+        setSubmitMessage("Не удалось отправить нажатие. Проверьте соединение и попробуйте снова.");
+      }
+    } finally {
+      setSubmittingGuess(false);
+      submitLockRef.current = false;
     }
   };
 
@@ -803,7 +826,7 @@ export default function RoomScreen() {
                   <motion.button
                     type="button"
                     onClick={submitGuess}
-                    disabled={!!myGuess || !isRoundReadyForGuess(runningRound)}
+                    disabled={!!myGuess || !isRoundReadyForGuess(runningRound) || submittingGuess || connStatus !== "connected"}
                     className={clsx(
                       "w-full rounded-3xl px-6 py-5 border transition",
                       myGuess
@@ -822,9 +845,9 @@ export default function RoomScreen() {
                       transition={{ duration: 0.15 }}
                       className="flex items-center justify-center gap-3"
                     >
-                      <span className="text-3xl font-black tracking-tight">СЕЙЧАС!</span>
+                      <span className="text-3xl font-black tracking-tight">{submittingGuess ? "..." : "СЕЙЧАС!"}</span>
                       <span className="text-sm font-bold opacity-80">
-                        {myGuess ? "зафиксировано" : "нажми"}
+                        {myGuess ? "зафиксировано" : submittingGuess ? "отправка" : "нажми"}
                       </span>
                     </motion.div>
                   </motion.button>
@@ -834,6 +857,11 @@ export default function RoomScreen() {
               <div className="mt-4 text-xs text-zinc-500">
                 Кнопка блокируется после первого нажатия в раунде.
               </div>
+              {submitMessage ? (
+                <div className="mt-2 text-xs px-3 py-2 rounded-xl border border-amber-400/30 bg-amber-500/10 text-amber-200">
+                  {submitMessage}
+                </div>
+              ) : null}
             </div>
 
             <div className="rounded-2xl border border-white/10 bg-white/5 p-4 md:p-5">

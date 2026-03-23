@@ -377,6 +377,12 @@ begin
     0,
     floor(extract(epoch from (clock_timestamp() - v_round.started_at)) * 1000)::integer
   );
+
+  -- Do not accept guesses after round duration window.
+  if v_press_time_ms > v_round.duration_ms then
+    raise exception 'too_late';
+  end if;
+
   v_delta_ms := v_press_time_ms - v_round.event_time_ms;
 
   insert into public.guesses (

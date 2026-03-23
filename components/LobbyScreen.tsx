@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { motion } from "framer-motion";
 import { supabase } from "@/lib/supabase/client";
 import AvatarPicker from "@/components/AvatarPicker";
 import PlayerBadge from "@/components/PlayerBadge";
@@ -25,6 +26,7 @@ export default function LobbyScreen() {
   const [loadingRooms, setLoadingRooms] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [joinCode, setJoinCode] = useState("");
 
   useEffect(() => {
     let mounted = true;
@@ -110,13 +112,18 @@ export default function LobbyScreen() {
 
   const joinRoom = async (code: string) => {
     if (!profile) return;
+    const normalized = code.trim().toUpperCase();
+    if (!normalized) {
+      setError("Введите код комнаты");
+      return;
+    }
     setError(null);
     setBusy(true);
     try {
       const { data: roomRow, error: roomErr } = await supabase
         .from("rooms")
         .select("*")
-        .eq("code", code)
+        .eq("code", normalized)
         .single();
       if (roomErr || !roomRow) throw roomErr ?? new Error("Комната не найдена");
       const room = roomRow as Room;
@@ -147,32 +154,96 @@ export default function LobbyScreen() {
   const avatarValue = profile?.avatar ?? "";
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-black to-zinc-950 text-foreground">
-      <div className="max-w-4xl mx-auto px-4 py-6">
-        <div className="flex items-center justify-between gap-3">
+    <div className="min-h-screen bg-[radial-gradient(80%_50%_at_50%_0%,rgba(16,185,129,0.2),rgba(0,0,0,0))] bg-black text-foreground">
+      <div className="max-w-5xl mx-auto px-4 py-5 md:py-8">
+        <div className="flex items-center justify-between gap-3 mb-4">
           <div>
-            <div className="text-2xl font-black tracking-tight">Guess Duel</div>
-            <div className="text-sm text-zinc-400">Угадай момент события. Считай точность. Побеждай.</div>
+            <div className="text-xl md:text-2xl font-black tracking-tight">Guess Duel</div>
+            <div className="text-xs md:text-sm text-zinc-400">Мультиплеерная дуэль точности по таймингу событий.</div>
           </div>
           <a
             href="/leaderboard"
-            className="px-4 py-2 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 transition text-sm font-semibold"
+            className="px-3 py-2 md:px-4 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-emerald-300/30 transition text-xs md:text-sm font-semibold"
           >
             Лидеры
           </a>
         </div>
 
-        <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-5">
-          <div className="rounded-2xl border border-white/10 bg-white/5 p-4 md:p-5">
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.25 }}
+          className="rounded-3xl border border-white/10 bg-gradient-to-b from-white/10 to-white/5 p-5 md:p-7"
+        >
+          <div className="max-w-2xl">
+            <h1 className="text-3xl md:text-5xl font-black tracking-tight leading-tight">
+              Нажми вовремя. Забери первое место.
+            </h1>
+            <p className="mt-3 text-sm md:text-base text-zinc-300">
+              Угадай миллисекундный момент события в раунде и обгони соперников в реальном времени.
+            </p>
+          </div>
+
+          <div className="mt-5 grid grid-cols-1 sm:grid-cols-3 gap-2.5 md:gap-3">
+            {[
+              { title: "Real-time multiplayer", hint: "Общая сессия для всех игроков" },
+              { title: "Millisecond accuracy scoring", hint: "Очки по точности до миллисекунд" },
+              { title: "Live leaderboard", hint: "Таблица обновляется мгновенно" },
+            ].map((item) => (
+              <div
+                key={item.title}
+                className="rounded-2xl border border-white/10 bg-black/25 px-3.5 py-3.5 md:px-4 md:py-4"
+              >
+                <div className="text-sm font-bold text-white">{item.title}</div>
+                <div className="text-xs text-zinc-400 mt-1">{item.hint}</div>
+              </div>
+            ))}
+          </div>
+
+          <div className="mt-5 grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+            <button
+              type="button"
+              onClick={createRoom}
+              disabled={!canProceed || busy}
+              className="w-full px-4 py-3.5 rounded-2xl bg-emerald-500 text-black font-black transition hover:bg-emerald-400 focus:outline-none focus:ring-2 focus:ring-emerald-300/30 disabled:opacity-50 disabled:hover:bg-emerald-500"
+            >
+              Создать комнату
+            </button>
+            <div className="flex gap-2.5">
+              <input
+                value={joinCode}
+                onChange={(e) => setJoinCode(e.target.value.toUpperCase())}
+                placeholder="Код комнаты"
+                className="w-full px-3 py-3.5 rounded-2xl bg-black/40 border border-white/10 outline-none focus:border-white/30 focus:ring-2 focus:ring-white/10"
+              />
+              <button
+                type="button"
+                onClick={() => joinRoom(joinCode)}
+                disabled={!canProceed || busy}
+                className="px-4 py-3.5 rounded-2xl border border-white/15 bg-white/10 hover:bg-white/15 text-white font-bold transition focus:outline-none focus:ring-2 focus:ring-white/20 disabled:opacity-50"
+              >
+                Войти
+              </button>
+            </div>
+          </div>
+        </motion.div>
+
+        <div className="mt-5 grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-5">
+          <motion.div
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.22, delay: 0.03 }}
+            className="rounded-2xl border border-white/10 bg-white/5 p-4 md:p-5"
+          >
             <div className="text-lg font-bold">Профиль игрока</div>
-            <div className="mt-3 space-y-3">
+            <div className="mt-3 space-y-3.5">
               <label className="block">
                 <div className="text-sm text-zinc-400 mb-1">Никнейм</div>
                 <input
                   value={nicknameValue}
                   onChange={(e) => update({ nickname: e.target.value })}
                   placeholder="Например: Flash"
-                  className="w-full px-3 py-2 rounded-xl bg-black/30 border border-white/10 outline-none focus:border-white/25"
+                  className="w-full px-3 py-2.5 rounded-xl bg-black/30 border border-white/10 outline-none focus:border-white/25 focus:ring-2 focus:ring-white/10"
                 />
               </label>
 
@@ -186,22 +257,16 @@ export default function LobbyScreen() {
                 )}
               </div>
             </div>
-          </div>
+          </motion.div>
 
-          <div className="rounded-2xl border border-white/10 bg-white/5 p-4 md:p-5">
+          <motion.div
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.22, delay: 0.06 }}
+            className="rounded-2xl border border-white/10 bg-white/5 p-4 md:p-5"
+          >
             <div className="text-lg font-bold">Комнаты</div>
             <div className="mt-3">
-              <div className="flex gap-3">
-                <button
-                  type="button"
-                  onClick={createRoom}
-                  disabled={!canProceed || busy}
-                  className="w-full px-4 py-3 rounded-xl bg-emerald-500 text-black font-black transition hover:bg-emerald-400 disabled:opacity-50 disabled:hover:bg-emerald-500"
-                >
-                  Создать комнату
-                </button>
-              </div>
-
               <div className="mt-4 flex items-center justify-between">
                 <div className="text-sm text-zinc-400">Активные комнаты</div>
                 <div className="text-xs text-zinc-500">{loadingRooms ? "обновляю..." : "онлайн"}</div>
@@ -217,7 +282,7 @@ export default function LobbyScreen() {
                       type="button"
                       onClick={() => joinRoom(r.code)}
                       disabled={!canProceed || busy}
-                      className="w-full text-left px-3 py-2 rounded-xl border border-white/10 bg-black/20 hover:bg-black/30 transition"
+                      className="w-full text-left px-3 py-2.5 rounded-xl border border-white/10 bg-black/20 hover:bg-white/5 hover:border-white/20 focus:outline-none focus:ring-2 focus:ring-white/10 transition"
                     >
                       <div className="flex items-center justify-between gap-3">
                         <div>
@@ -233,7 +298,7 @@ export default function LobbyScreen() {
 
               {error ? <div className="mt-3 text-sm text-red-300">{error}</div> : null}
             </div>
-          </div>
+          </motion.div>
         </div>
       </div>
     </div>

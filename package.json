@@ -2,6 +2,8 @@
   "name": "guess-duel-game",
   "version": "0.1.0",
   "private": true,
+  "license": "UNLICENSED",
+  "author": "Сергей <djron11@mail.ru>",
   "scripts": {
     "dev": "next dev",
     "build": "next build",

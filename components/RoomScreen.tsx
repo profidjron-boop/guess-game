@@ -47,12 +47,12 @@ function classifyResult(deltaMs: number | null | undefined): {
   tone: ResultTone;
 } {
   if (deltaMs == null) return { label: "Момент пропущен", tone: "poor" };
-  if (deltaMs < 0) return { label: "Слишком рано", tone: "early" };
+  if (deltaMs < 0) return { label: "Рано нажал", tone: "early" };
   const abs = Math.abs(deltaMs);
-  if (abs <= 500) return { label: "Идеальный тайминг", tone: "perfect" };
+  if (abs <= 500) return { label: "Почти идеально", tone: "perfect" };
   if (abs <= 1000) return { label: "Отличное попадание", tone: "great" };
-  if (abs <= 2000) return { label: "Близко", tone: "close" };
-  if (abs <= 5000) return { label: "Близко", tone: "close" };
+  if (abs <= 2000) return { label: "Слишком поздно", tone: "close" };
+  if (abs <= 5000) return { label: "Слишком поздно", tone: "close" };
   return { label: "Момент пропущен", tone: "poor" };
 }
 
@@ -87,9 +87,9 @@ function toneClasses(tone: ResultTone) {
 }
 
 function connStatusLabel(status: "connected" | "reconnecting" | "disconnected") {
-  if (status === "connected") return "подключено";
-  if (status === "reconnecting") return "переподключение";
-  return "отключено";
+  if (status === "connected") return "Подключено";
+  if (status === "reconnecting") return "Переподключаемся…";
+  return "Соединение потеряно";
 }
 
 function categoryRuLabel(value: "sport" | "cyber" | null) {
@@ -400,7 +400,7 @@ export default function RoomScreen() {
       const normalized = raw.toLowerCase();
 
       if (normalized.includes("already_guessed")) {
-        setSubmitMessage("Нажатие уже зафиксировано для этого раунда.");
+        setSubmitMessage("Ответ принят. Ожидаем результат раунда.");
       } else if (normalized.includes("round_not_running")) {
         setSubmitMessage("Раунд уже завершен или еще не начался.");
       } else if (normalized.includes("too_late")) {
@@ -826,43 +826,69 @@ export default function RoomScreen() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center text-zinc-400">
-        Подключаемся...
+      <div className="gd-page flex items-center justify-center text-zinc-300">
+        Подключаем комнату…
       </div>
     );
   }
 
   if (!room) {
     return (
-      <div className="min-h-screen flex items-center justify-center text-zinc-400">
-        Комната не найдена или вы не вошли.
+      <div className="gd-page flex items-center justify-center text-zinc-300">
+        Не удалось подключиться к комнате. Попробуйте ещё раз.
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-900 via-slate-800 to-slate-700 text-zinc-100">
-      <div className="max-w-5xl mx-auto px-4 py-6">
-        <div className="flex items-center justify-between gap-3">
+    <div className="gd-page">
+      {room.status === "playing" && runningRound ? (
+        <div className="md:hidden fixed top-0 inset-x-0 z-40 h-14 px-4 border-b border-white/10 bg-[#0B1020]/90 backdrop-blur flex items-center justify-between">
+          <div className="flex items-center gap-2 min-w-0">
+            <span className="text-[10px] px-2 py-1 rounded-full border border-rose-400/40 bg-rose-500/20 text-rose-200 font-black">
+              LIVE
+            </span>
+            <span className="text-xs font-semibold truncate">
+              {room.match_title ?? `Комната ${room.code}`}
+            </span>
+          </div>
+          <div className="text-right">
+            <div className="text-[11px] text-zinc-300">
+              Раунд {runningRound.round_number}/{room.total_rounds}
+            </div>
+            <div className="text-[10px] text-zinc-400">{connStatusLabel(connStatus)}</div>
+          </div>
+        </div>
+      ) : null}
+
+      <div
+        className={clsx(
+          "max-w-5xl mx-auto px-4 py-6 pb-28 md:pb-6",
+          room.status === "playing" && runningRound ? "pt-20 md:pt-6" : ""
+        )}
+      >
+        <div
+          className={clsx(
+            "items-center justify-between gap-3",
+            room.status === "playing" ? "hidden md:flex" : "flex"
+          )}
+        >
           <div className="flex items-center gap-3">
-            <Link
-              href={backHref}
-              className="px-3 py-2 rounded-xl border border-white/30 bg-white/20 hover:bg-white/30 transition text-sm font-semibold text-white"
-            >
+            <Link href={backHref} className="gd-btn-secondary text-sm">
               К матчам
             </Link>
             <div>
               <div className="text-lg font-black tracking-tight">Комната {room.code}</div>
               <div className="text-xs text-zinc-400">
                 {room.status === "waiting"
-                  ? "Ожидание"
+                  ? "Ожидание старта"
                   : room.status === "playing"
                     ? "Игра идёт"
                     : "Результаты"}
               </div>
               {room.match_title ? (
                 <div className="text-xs text-zinc-200 mt-1">
-                  Match: {room.match_title}
+                  Матч: {room.match_title}
                   {room.league ? ` • ${room.league}` : ""}
                 </div>
               ) : null}
@@ -889,7 +915,7 @@ export default function RoomScreen() {
                 compact
               />
             ) : (
-              <div className="text-xs text-zinc-500">Подключение...</div>
+              <div className="text-xs text-zinc-500">Подключаем комнату…</div>
             )}
           </div>
         </div>
@@ -903,7 +929,7 @@ export default function RoomScreen() {
             )}
           >
             {connStatus === "reconnecting"
-              ? "Соединение нестабильно, пытаемся переподключиться. Интерфейс продолжает работать."
+              ? "Переподключаемся…"
               : "Соединение потеряно. Ожидаем восстановление канала и синхронизацию состояния."}
           </div>
         ) : null}
@@ -911,7 +937,7 @@ export default function RoomScreen() {
         {/* WAITING ROOM */}
         {room.status === "waiting" ? (
           <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-5">
-            <div className="rounded-2xl border border-white/20 bg-white/12 p-4 md:p-5">
+            <div className="gd-card">
               <div className="text-lg font-bold">Ожидание старта</div>
 
               <div className="mt-4 space-y-3">
@@ -926,7 +952,7 @@ export default function RoomScreen() {
                   <button
                     type="button"
                     onClick={() => navigator.clipboard.writeText(inviteLink)}
-                    className="mt-2 px-3 py-2 rounded-xl bg-white/10 hover:bg-white/15 border border-white/10 text-xs font-semibold"
+                    className="mt-2 gd-btn-secondary text-xs"
                   >
                     Скопировать ссылку
                   </button>
@@ -938,33 +964,36 @@ export default function RoomScreen() {
                       {room.match_title}
                     </div>
                     <div className="text-xs text-zinc-200 mt-1">
-                      Событие: {room.event_label ?? "Событие по матчу"} • Сторона:{" "}
-                      {myParticipant?.selected_team ?? "не выбрана"}
+                      Лига: {room.league ?? "—"} • Событие:{" "}
+                      {room.event_label ?? "Событие вашей команды"}
+                    </div>
+                    <div className="text-xs text-zinc-200 mt-1">
+                      Вы болеете за: {myParticipant?.selected_team ?? "не выбрана"}
                     </div>
                   </div>
                 ) : null}
               </div>
 
-              <div className="mt-4 flex gap-3">
+              <div className="mt-4 hidden md:flex gap-3">
                 {myParticipant ? (
                   <button
                     type="button"
                     onClick={() => toggleReady(!myParticipant.ready)}
                     className={clsx(
-                      "w-full px-4 py-3 rounded-xl font-black transition",
+                      "w-full px-4 py-3 rounded-2xl font-black transition",
                       myParticipant.ready
-                        ? "bg-emerald-500 text-black"
+                        ? "bg-emerald-500 text-black shadow-lg shadow-emerald-500/30"
                         : "bg-white/10 hover:bg-white/15 text-white"
                     )}
                   >
                     {myParticipant.ready ? "Готов" : "Я готов"}
                   </button>
                 ) : (
-                  <div className="text-sm text-zinc-400 self-center">Нужен профиль игрока.</div>
+                  <div className="text-sm text-zinc-400 self-center">Заполните профиль игрока.</div>
                 )}
               </div>
 
-              <div className="mt-4">
+              <div className="mt-4 hidden md:block">
                 <button
                   type="button"
                   onClick={startGame}
@@ -975,9 +1004,9 @@ export default function RoomScreen() {
                     connStatus !== "connected"
                   }
                   className={clsx(
-                    "w-full px-4 py-3 rounded-xl font-black transition",
+                    "w-full px-4 py-3 rounded-2xl font-black transition",
                     isHost
-                      ? "bg-emerald-500 text-black hover:bg-emerald-400"
+                      ? "bg-emerald-500 text-black hover:bg-emerald-400 shadow-lg shadow-emerald-500/30"
                       : "bg-white/10 text-zinc-300 cursor-not-allowed"
                   )}
                 >
@@ -989,7 +1018,7 @@ export default function RoomScreen() {
               </div>
             </div>
 
-            <div className="rounded-2xl border border-white/20 bg-white/12 p-4 md:p-5">
+            <div className="gd-card">
               <div className="flex items-center justify-between">
                 <div className="text-lg font-bold">Участники</div>
                 <div className="text-xs text-zinc-500">{participants.length} онлайн</div>
@@ -1008,12 +1037,12 @@ export default function RoomScreen() {
                       <PlayerBadge nickname={p.nickname} avatar={p.avatar} />
                       {p.selected_team ? (
                         <span className="text-[11px] px-2 py-1 rounded-full border border-sky-400/30 bg-sky-500/10 text-sky-100 font-semibold">
-                          {p.selected_team}
+                          Команда: {p.selected_team}
                         </span>
                       ) : null}
                       {p.player_id === room.host_id ? (
                         <span className="text-xs px-2 py-1 rounded-full bg-emerald-500/20 border border-emerald-400/30 text-emerald-200 font-semibold">
-                          ХОСТ
+                          Хост
                         </span>
                       ) : null}
                     </div>
@@ -1025,10 +1054,15 @@ export default function RoomScreen() {
                           : "border-white/10 bg-white/5 text-zinc-200"
                       )}
                     >
-                      {p.ready ? "Готов" : "Ждёт"}
+                      {p.connected ? (p.ready ? "Готов" : "Ждёт") : "Не в сети"}
                     </div>
                   </div>
                 ))}
+                {participants.length === 0 ? (
+                  <div className="rounded-xl border border-dashed border-white/25 bg-white/10 px-3 py-3 text-sm text-zinc-200">
+                    Пока никого нет. Пригласите друзей по ссылке.
+                  </div>
+                ) : null}
               </div>
             </div>
           </div>
@@ -1037,7 +1071,7 @@ export default function RoomScreen() {
         {/* PLAYING */}
         {room.status === "playing" && runningRound && myParticipant ? (
           <div className="mt-6 grid grid-cols-1 lg:grid-cols-3 gap-5">
-            <div className="lg:col-span-2 rounded-2xl border border-white/20 bg-white/12 p-4 md:p-5">
+            <div className="lg:col-span-2 gd-card">
               <div className="flex items-start justify-between gap-4">
                 <div>
                   <div className="text-xs text-zinc-400">Текущий раунд</div>
@@ -1054,8 +1088,8 @@ export default function RoomScreen() {
                   </div>
                   {room.match_title ? (
                     <div className="mt-2 text-xs text-zinc-100">
-                      Match: <span className="font-semibold">{room.match_title}</span>
-                      {room.league ? ` • League: ${room.league}` : ""} • Сторона:{" "}
+                      Матч: <span className="font-semibold">{room.match_title}</span>
+                      {room.league ? ` • ${room.league}` : ""} • Вы болеете за:{" "}
                       <span className="text-emerald-200 font-semibold">
                         {myParticipant?.selected_team ?? "не выбрана"}
                       </span>
@@ -1063,6 +1097,9 @@ export default function RoomScreen() {
                   ) : null}
                 </div>
                 <div className="text-right">
+                  <div className="gd-chip inline-flex mb-1 bg-rose-500/20 border-rose-400/30 text-rose-200 animate-pulse">
+                    LIVE
+                  </div>
                   <div className="text-xs text-zinc-400">Текущий счёт</div>
                   <div className="text-2xl font-black">{myParticipant.score}</div>
                   <div className="text-xs text-zinc-500 mt-1">
@@ -1078,7 +1115,7 @@ export default function RoomScreen() {
 
               <div className="mt-5">
                 <div className="text-xs text-zinc-200 mb-2">
-                  Смотрите трансляцию и нажмите в момент события:{" "}
+                  Событие:{" "}
                   <span className="font-semibold text-emerald-200">
                     {room.event_label ?? "целевое событие вашей команды"}
                   </span>
@@ -1094,10 +1131,10 @@ export default function RoomScreen() {
                       connStatus !== "connected"
                     }
                     className={clsx(
-                      "w-full rounded-3xl px-6 py-5 border transition",
+                      "w-full rounded-3xl px-6 py-6 border transition",
                       myGuess
                         ? "border-emerald-400/30 bg-emerald-500/20 text-emerald-100 cursor-not-allowed"
-                        : "border-white/15 bg-emerald-500 text-black hover:bg-emerald-400"
+                        : "border-white/15 bg-emerald-500 text-black hover:bg-emerald-400 shadow-[0_16px_34px_rgba(34,197,94,0.35)]"
                     )}
                     initial={{ scale: 1 }}
                     whileHover={!myGuess ? { scale: 1.02 } : undefined}
@@ -1115,26 +1152,50 @@ export default function RoomScreen() {
                         {submittingGuess ? "..." : "СЕЙЧАС!"}
                       </span>
                       <span className="text-sm font-bold opacity-80">
-                        {myGuess ? "зафиксировано" : submittingGuess ? "отправка" : "нажми"}
+                        {myGuess
+                          ? "Ответ принят"
+                          : submittingGuess
+                            ? "Отправка…"
+                            : "Нажмите в момент события"}
                       </span>
                     </motion.div>
                   </motion.button>
                 </AnimatePresence>
               </div>
 
-              <div className="mt-4 text-xs text-zinc-500">
-                Кнопка блокируется после первого нажатия в раунде.
+              <div className="mt-4 text-xs text-zinc-400">
+                {myGuess
+                  ? "Ожидаем результат раунда."
+                  : "Кнопка блокируется после первого нажатия в раунде."}
               </div>
               {submitMessage ? (
                 <div className="mt-2 text-xs px-3 py-2 rounded-xl border border-amber-400/30 bg-amber-500/10 text-amber-200">
                   {submitMessage}
                 </div>
               ) : null}
+
+              <div className="mt-4 md:hidden gd-card-soft">
+                <div className="text-sm font-bold">Турнирная таблица</div>
+                <div className="mt-2 space-y-1.5">
+                  {sortedByScore.slice(0, 3).map((p, idx) => (
+                    <div
+                      key={p.id}
+                      className="flex items-center justify-between rounded-xl border border-white/10 bg-white/5 px-2.5 py-2"
+                    >
+                      <div className="flex items-center gap-2 min-w-0">
+                        <span className="text-xs font-black text-zinc-400 w-4">{idx + 1}.</span>
+                        <span className="text-xs font-semibold truncate">{p.nickname}</span>
+                      </div>
+                      <span className="text-xs font-black text-emerald-200">{p.score}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
             </div>
 
-            <div className="rounded-2xl border border-white/20 bg-white/12 p-4 md:p-5">
+            <div className="hidden md:block gd-card">
               <div className="text-lg font-bold">Турнирная таблица</div>
-              <div className="text-xs text-zinc-500 mt-1">Очки обновляются realtime</div>
+              <div className="text-xs text-zinc-500 mt-1">Очки обновляются в реальном времени</div>
 
               <div className="mt-4 space-y-2">
                 {participants.map((p, idx) => (
@@ -1167,7 +1228,7 @@ export default function RoomScreen() {
         <AnimatePresence>
           {room.status === "playing" && roundModal && roundResults.length > 0 ? (
             <motion.div
-              className="fixed inset-0 z-50 flex items-center justify-center px-4"
+              className="fixed inset-0 z-50 flex items-end md:items-center justify-center px-0 md:px-4"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
@@ -1180,12 +1241,13 @@ export default function RoomScreen() {
                 }}
               />
               <motion.div
-                className="relative w-full max-w-3xl rounded-3xl border border-white/20 bg-slate-900/95 backdrop-blur p-4 md:p-6 overflow-hidden"
-                initial={{ y: 12, scale: 0.98 }}
+                className="relative w-full max-w-3xl h-[60vh] md:h-auto rounded-t-3xl md:rounded-3xl border border-white/20 bg-slate-900/95 backdrop-blur p-4 md:p-6 overflow-hidden flex flex-col"
+                initial={{ y: 22, scale: 0.99 }}
                 animate={{ y: 0, scale: 1 }}
                 exit={{ y: 8, scale: 0.98 }}
                 transition={{ type: "spring", stiffness: 200, damping: 18 }}
               >
+                <div className="mx-auto mb-3 h-1.5 w-12 rounded-full bg-white/25 md:hidden" />
                 <div className="flex items-start justify-between gap-3">
                   <div>
                     <div className="text-xs text-zinc-400">Результаты раунда</div>
@@ -1201,7 +1263,7 @@ export default function RoomScreen() {
                     </div>
                     {room.match_title ? (
                       <div className="text-xs text-zinc-200 mt-1">
-                        Match: {room.match_title} • Event:{" "}
+                        Матч: {room.match_title} • Событие:{" "}
                         <span className="font-semibold text-emerald-200">
                           {room.event_label ?? "Событие вашей команды"}
                         </span>
@@ -1219,8 +1281,17 @@ export default function RoomScreen() {
                     </div>
                   </div>
                 </div>
+                <div className="mt-3 text-lg font-black text-emerald-200">
+                  {(() => {
+                    const myGuessRow = roundResults.find(
+                      (r) => r.player.player_id === playerId
+                    )?.guess;
+                    const myDelta = myGuessRow && myGuessRow.hasGuess ? myGuessRow.delta_ms : null;
+                    return classifyResult(myDelta).label;
+                  })()}
+                </div>
 
-                <div className="mt-5 overflow-x-auto">
+                <div className="mt-5 overflow-auto flex-1">
                   <table className="w-full text-left">
                     <thead>
                       <tr className="text-xs uppercase text-zinc-400 bg-white/5">
@@ -1265,7 +1336,7 @@ export default function RoomScreen() {
                                 />
                                 {isWinner ? (
                                   <span className="text-[11px] px-2 py-1 rounded-full bg-emerald-500/20 border border-emerald-400/30 text-emerald-200 font-black">
-                                    WIN
+                                    Лидер раунда
                                   </span>
                                 ) : null}
                               </div>
@@ -1340,6 +1411,15 @@ export default function RoomScreen() {
                   Игроки отсортированы от самого точного к менее точному. Следующий раунд
                   запускается автоматически.
                 </div>
+                <div className="mt-4">
+                  <button
+                    type="button"
+                    onClick={() => setRoundModal(null)}
+                    className="gd-btn-primary w-full md:w-auto"
+                  >
+                    Далее
+                  </button>
+                </div>
               </motion.div>
             </motion.div>
           ) : null}
@@ -1349,23 +1429,28 @@ export default function RoomScreen() {
         {room.status === "finished" ? (
           <div className="mt-6">
             <motion.div
-              className="rounded-3xl border border-white/20 bg-white/12 p-4 md:p-6"
+              className="gd-card p-4 md:p-6"
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.25 }}
             >
               <div className="flex items-start justify-between gap-4">
                 <div>
-                  <div className="text-xs text-zinc-400">Игра завершена</div>
-                  <div className="text-2xl font-black tracking-tight">Итоговый пьедестал</div>
+                  <div className="text-xs text-zinc-400">Итоги матча</div>
+                  <div className="text-2xl font-black tracking-tight">
+                    Вы заняли {myPlace ? `${myPlace} место` : "место"}
+                  </div>
                   {room.match_title ? (
                     <div className="text-sm text-zinc-200 mt-1">
-                      Match: {room.match_title} • You backed{" "}
+                      Матч: {room.match_title} • Вы болели за{" "}
                       <span className="font-semibold text-emerald-200">
                         {myParticipant?.selected_team ?? "вашу команду"}
                       </span>
                     </div>
                   ) : null}
+                  <div className="text-sm text-zinc-200 mt-1">
+                    Итог: <span className="font-black">{myParticipant?.score ?? 0}</span> очков
+                  </div>
                 </div>
                 <div className="text-right">
                   <div className="text-xs text-zinc-400">Ваша позиция</div>
@@ -1530,7 +1615,7 @@ export default function RoomScreen() {
                     onClick={resetAndNewGame}
                     className="w-full md:w-auto px-6 py-3 rounded-2xl bg-emerald-500 text-black font-black hover:bg-emerald-400 transition"
                   >
-                    Новая игра
+                    Реванш
                   </button>
                 ) : (
                   <button
@@ -1538,7 +1623,7 @@ export default function RoomScreen() {
                     disabled
                     className="w-full md:w-auto px-6 py-3 rounded-2xl bg-white/10 text-zinc-400 font-black cursor-not-allowed transition"
                   >
-                    Новая игра (только хост)
+                    Реванш (только хост)
                   </button>
                 )}
                 <button
@@ -1546,7 +1631,7 @@ export default function RoomScreen() {
                   onClick={() => router.push(backHref)}
                   className="w-full md:w-auto px-6 py-3 rounded-2xl bg-white/5 border border-white/10 text-white font-black hover:bg-white/10 transition"
                 >
-                  Вернуться к матчам
+                  К матчам
                 </button>
               </div>
 
@@ -1715,7 +1800,7 @@ export default function RoomScreen() {
                                   tone.pill
                                 )}
                               >
-                                {g ? (isEarly ? "Слишком рано" : label) : "Момент пропущен"}
+                                {g ? (isEarly ? "Рано нажал" : label) : "Момент пропущен"}
                               </span>
                             </td>
                           </tr>
@@ -1779,6 +1864,40 @@ export default function RoomScreen() {
           </div>
         ) : null}
       </div>
+
+      {room.status === "waiting" && myParticipant ? (
+        <div className="md:hidden fixed inset-x-0 bottom-0 z-40 p-4 pb-[max(16px,env(safe-area-inset-bottom))] bg-gradient-to-t from-[#0B1020] to-[#0B1020]/30 backdrop-blur">
+          <div className="grid grid-cols-2 gap-2">
+            <button
+              type="button"
+              onClick={() => toggleReady(!myParticipant.ready)}
+              className={clsx(
+                "px-4 py-3 rounded-2xl font-black transition",
+                myParticipant.ready
+                  ? "bg-emerald-500 text-black shadow-lg shadow-emerald-500/30"
+                  : "bg-white/12 text-white border border-white/20"
+              )}
+            >
+              {myParticipant.ready ? "Готов" : "Я готов"}
+            </button>
+            <button
+              type="button"
+              onClick={startGame}
+              disabled={
+                !isHost || room.status !== "waiting" || startingGame || connStatus !== "connected"
+              }
+              className={clsx(
+                "px-4 py-3 rounded-2xl font-black transition",
+                isHost
+                  ? "bg-emerald-500 text-black shadow-lg shadow-emerald-500/30"
+                  : "bg-white/10 text-zinc-400 cursor-not-allowed border border-white/15"
+              )}
+            >
+              {isHost ? (startingGame ? "Запуск..." : "Запустить") : "Ждём хоста"}
+            </button>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }

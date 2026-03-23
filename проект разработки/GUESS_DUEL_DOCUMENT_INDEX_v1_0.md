@@ -1,7 +1,7 @@
-# GUESS_DUEL_DOCUMENT_INDEX_v1_1
+# GUESS_DUEL_DOCUMENT_INDEX_v1_2
 
-Version: v1.1  
-Date: 2026-03-23  
+Version: v1.2  
+Date: 2026-03-24  
 Product: Guess Duel  
 Purpose: master index of all governing documents for this project
 
@@ -59,3 +59,12 @@ Purpose: master index of all governing documents for this project
 
 - Production URL: `https://guess-duel.vercel.app`
 - Last fan-flow implementation commits: `f17102b`, `29934a8`
+- QA baseline executed locally (2026-03-24): format, lint, unit, e2e, build, audit, load
+
+---
+
+## 7) Legal / licensing
+
+- Root `LICENSE` - proprietary license, all rights reserved; contact: `djron11@mail.ru`
+- `NOTICE` - short copyright + licensing contact
+- `package.json` -> `"license": "UNLICENSED"`, `author` with contact email

@@ -8,7 +8,7 @@ Stage: fan-mode implementation completed
 Status: release-ready  
 Owner: greka  
 Date: 2026-03-23  
-Updated: 2026-03-24
+Updated: 2026-03-24 (docs+qa+license sync)
 
 ---
 
@@ -77,3 +77,5 @@ Primary user actions:
 - Production: `https://guess-duel.vercel.app`
 - Code baseline: `main` branch, commits `f17102b`, `29934a8`.
 - Supabase schema: applied (user-confirmed) from `supabase/schema.sql`.
+- QA baseline executed: `format:check`, `lint`, `test:unit`, `test:e2e`, `build`, `audit:deps`, `test:load`.
+- Legal status: proprietary distribution (`UNLICENSED`, root `LICENSE`).

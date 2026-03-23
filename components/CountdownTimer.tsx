@@ -45,9 +45,11 @@ export default function CountdownTimer({ round }: Props) {
           </div>
         </div>
         <div className="text-right">
-          <div className="text-xs text-zinc-400">Цель</div>
-          <div className={clsx("text-sm font-semibold", urgency ? "text-red-300" : "text-emerald-200")}>
-            момент события
+          <div className="text-xs text-zinc-400">Подсказка</div>
+          <div
+            className={clsx("text-sm font-semibold", urgency ? "text-red-300" : "text-emerald-200")}
+          >
+            Нажмите в момент события
           </div>
         </div>
       </div>
@@ -64,4 +66,3 @@ export default function CountdownTimer({ round }: Props) {
     </div>
   );
 }
-

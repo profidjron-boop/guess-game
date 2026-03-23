@@ -1,9 +1,10 @@
 import { expect, test } from "@playwright/test";
 
-test("лобби открывается и содержит основные CTA", async ({ page }) => {
+test("экран матчей открывается и содержит ключевые действия", async ({ page }) => {
   await page.goto("/");
 
-  await expect(page.getByText("Дуэль тайминга")).toBeVisible();
-  await expect(page.getByRole("button", { name: "Создать комнату" })).toBeVisible();
-  await expect(page.getByRole("button", { name: "Войти" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Матчи" })).toBeVisible();
+  await expect(page.getByPlaceholder("Поиск по командам")).toBeVisible();
+  await expect(page.getByRole("link", { name: "Глобальные лидеры" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Играть" }).first()).toBeVisible();
 });

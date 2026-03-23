@@ -14,6 +14,12 @@ type Props = {
   slug: string;
 };
 
+function statusRu(status: "live" | "upcoming" | "finished") {
+  if (status === "live") return "LIVE";
+  if (status === "upcoming") return "Скоро";
+  return "Завершён";
+}
+
 function generateRoomCode() {
   const alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
   let out = "";
@@ -40,6 +46,14 @@ export default function MatchDetailsScreen({ slug }: Props) {
   const selectedEvent = match?.modes[selectedMode] ?? match?.modes[0] ?? null;
   const canProceed = derived.isReady;
   const eventForTeam = `${selectedEvent?.label ?? "Событие"} — ${selectedTeam}`;
+  const startsLabel = useMemo(() => {
+    const d = new Date(match?.startsAt ?? "");
+    if (!match || Number.isNaN(d.getTime())) return statusRu(match?.status ?? "upcoming");
+    if (match.status === "upcoming") {
+      return `Скоро в ${d.toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" })}`;
+    }
+    return statusRu(match.status);
+  }, [match]);
 
   useEffect(() => {
     if (!match) return;
@@ -107,7 +121,7 @@ export default function MatchDetailsScreen({ slug }: Props) {
 
   if (!match) {
     return (
-      <div className="min-h-screen bg-slate-900 text-zinc-100 flex items-center justify-center">
+      <div className="gd-page flex items-center justify-center">
         <div className="text-center">
           <div className="text-2xl font-black">Матч не найден</div>
           <Link
@@ -253,39 +267,56 @@ export default function MatchDetailsScreen({ slug }: Props) {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-900 via-slate-800 to-slate-700 text-zinc-100">
-      <div className="max-w-6xl mx-auto px-4 py-6">
+    <div className="gd-page">
+      <div className="max-w-6xl mx-auto px-4 py-6 pb-28 md:pb-6">
         <div className="flex items-center justify-between gap-3">
           <div>
             <div className="text-xs text-zinc-300">
-              {categoryLabel(match.category)} • {match.league} • {match.status.toUpperCase()}
+              {categoryLabel(match.category)} • {match.league} • {startsLabel}
             </div>
             <h1 className="text-3xl font-black text-white">
               {match.homeTeam} — {match.awayTeam}
             </h1>
             <div className="text-sm text-zinc-200 mt-1">
-              Second-screen игра для болельщиков этого матча.
+              Second-screen игра для болельщиков в реальном времени.
             </div>
           </div>
-          <Link
-            href="/"
-            className="px-4 py-2 rounded-xl border border-white/25 bg-white/15 hover:bg-white/25 font-semibold"
-          >
+          <Link href="/" className="gd-btn-secondary">
             К матчам
           </Link>
         </div>
 
+        <div className="mt-5 gd-card p-5 md:p-6 rounded-[28px]">
+          <div className="flex items-start justify-between gap-3">
+            <span className="gd-chip bg-rose-500/20 border-rose-400/30 text-rose-200">
+              {startsLabel}
+            </span>
+            <span className="gd-chip">{match.league}</span>
+          </div>
+          <div className="mt-4 flex items-center justify-between gap-3">
+            <div className="text-center">
+              <div className="text-3xl">{match.homeTeamLogo}</div>
+              <div className="mt-1 text-sm font-bold">{match.homeTeam}</div>
+            </div>
+            <div className="text-xl font-black text-zinc-100">VS</div>
+            <div className="text-center">
+              <div className="text-3xl">{match.awayTeamLogo}</div>
+              <div className="mt-1 text-sm font-bold">{match.awayTeam}</div>
+            </div>
+          </div>
+        </div>
+
         <div className="mt-5 grid grid-cols-1 lg:grid-cols-3 gap-4">
-          <div className="lg:col-span-2 rounded-2xl border border-white/20 bg-white/12 p-4">
+          <div className="lg:col-span-2 gd-card">
             <div className="text-sm font-semibold text-zinc-200">Выберите сторону</div>
             <div className="mt-3 grid grid-cols-2 gap-2.5">
               <button
                 type="button"
                 onClick={() => setSelectedSide("home")}
                 className={[
-                  "rounded-xl border p-3 text-left transition",
+                  "rounded-[20px] border p-3 text-left transition min-h-[108px]",
                   selectedSide === "home"
-                    ? "border-emerald-400/40 bg-emerald-500/20"
+                    ? "border-emerald-300/50 bg-emerald-500/20 shadow-[0_12px_28px_rgba(34,197,94,0.2)]"
                     : "border-white/20 bg-white/10 hover:bg-white/20",
                 ].join(" ")}
               >
@@ -299,9 +330,9 @@ export default function MatchDetailsScreen({ slug }: Props) {
                 type="button"
                 onClick={() => setSelectedSide("away")}
                 className={[
-                  "rounded-xl border p-3 text-left transition",
+                  "rounded-[20px] border p-3 text-left transition min-h-[108px]",
                   selectedSide === "away"
-                    ? "border-emerald-400/40 bg-emerald-500/20"
+                    ? "border-emerald-300/50 bg-emerald-500/20 shadow-[0_12px_28px_rgba(34,197,94,0.2)]"
                     : "border-white/20 bg-white/10 hover:bg-white/20",
                 ].join(" ")}
               >
@@ -319,7 +350,7 @@ export default function MatchDetailsScreen({ slug }: Props) {
             </div>
 
             <div className="mt-4">
-              <div className="text-sm font-semibold text-zinc-200">Доступные события</div>
+              <div className="text-sm font-semibold text-zinc-200">Событие для предсказания</div>
               <div className="mt-2 grid grid-cols-1 md:grid-cols-2 gap-2.5">
                 {match.modes.map((mode, idx) => (
                   <button
@@ -339,19 +370,26 @@ export default function MatchDetailsScreen({ slug }: Props) {
                 ))}
               </div>
             </div>
+
+            <div className="mt-4 gd-card-soft">
+              <div className="text-xs uppercase tracking-wide text-zinc-400">Как играть</div>
+              <div className="mt-1 text-sm text-zinc-100">
+                Откройте трансляцию и нажмите «СЕЙЧАС!» в момент события.
+              </div>
+            </div>
           </div>
 
-          <div className="rounded-2xl border border-white/20 bg-white/12 p-4">
+          <div className="gd-card">
             <div className="text-lg font-black text-white">Играть по матчу</div>
-            <div className="text-sm text-zinc-200 mt-1">Match: {match.title}</div>
-            <div className="text-sm text-zinc-200">Event: {eventForTeam}</div>
+            <div className="text-sm text-zinc-200 mt-1">Матч: {match.title}</div>
+            <div className="text-sm text-zinc-200">Событие: {eventForTeam}</div>
 
             <div className="mt-4 space-y-3">
               <input
                 value={profile?.nickname ?? ""}
                 onChange={(e) => update({ nickname: e.target.value })}
                 placeholder="Никнейм"
-                className="w-full px-3 py-2.5 rounded-xl bg-white text-zinc-900 border border-zinc-300 outline-none focus:border-emerald-500"
+                className="gd-input"
               />
               <AvatarPicker value={profile?.avatar ?? ""} onChange={(a) => update({ avatar: a })} />
               {profile?.nickname && profile?.avatar ? (
@@ -363,9 +401,9 @@ export default function MatchDetailsScreen({ slug }: Props) {
               type="button"
               onClick={createRoom}
               disabled={!canProceed || !!busy}
-              className="mt-4 w-full px-4 py-3 rounded-xl bg-emerald-500 text-black font-black hover:bg-emerald-400 disabled:opacity-50"
+              className="gd-btn-primary mt-4 w-full disabled:opacity-50"
             >
-              {busy === "create" ? "Создаём..." : "Создать комнату по матчу"}
+              {busy === "create" ? "Создаём..." : "Создать комнату"}
             </button>
 
             <div className="mt-2 flex gap-2">
@@ -373,13 +411,13 @@ export default function MatchDetailsScreen({ slug }: Props) {
                 value={joinCode}
                 onChange={(e) => setJoinCode(e.target.value.toUpperCase())}
                 placeholder="Код комнаты"
-                className="w-full px-3 py-2.5 rounded-xl bg-white text-zinc-900 border border-zinc-300 outline-none focus:border-emerald-500"
+                className="gd-input"
               />
               <button
                 type="button"
                 onClick={joinRoom}
                 disabled={!canProceed || !!busy}
-                className="px-4 py-2.5 rounded-xl border border-white/25 bg-white/15 hover:bg-white/25 font-bold disabled:opacity-50"
+                className="gd-btn-secondary disabled:opacity-50"
               >
                 {busy === "join" ? "..." : "Войти"}
               </button>
@@ -393,7 +431,7 @@ export default function MatchDetailsScreen({ slug }: Props) {
         </div>
 
         <div className="mt-5 grid grid-cols-1 lg:grid-cols-2 gap-4">
-          <div className="rounded-2xl border border-white/20 bg-white/12 p-4">
+          <div className="gd-card">
             <div className="text-lg font-black text-white">Комнаты по матчу</div>
             <div className="mt-3 space-y-2">
               {rooms.length === 0 ? (
@@ -406,7 +444,7 @@ export default function MatchDetailsScreen({ slug }: Props) {
                     key={r.id}
                     type="button"
                     onClick={() => setJoinCode(r.code)}
-                    className="w-full text-left rounded-xl border border-white/20 bg-white/10 hover:bg-white/20 px-3 py-2.5 transition"
+                    className="w-full text-left rounded-xl border border-white/20 bg-white/12 hover:bg-white/20 px-3 py-2.5 transition"
                   >
                     <div className="text-sm font-black text-zinc-100">Код: {r.code}</div>
                     <div className="text-xs text-zinc-300">
@@ -418,7 +456,7 @@ export default function MatchDetailsScreen({ slug }: Props) {
             </div>
           </div>
 
-          <div className="rounded-2xl border border-white/20 bg-white/12 p-4">
+          <div className="gd-card">
             <div className="text-lg font-black text-white">Лидерборд по матчу</div>
             <div className="mt-3 space-y-2">
               {rows.slice(0, 8).map((r, idx) => (
@@ -435,12 +473,23 @@ export default function MatchDetailsScreen({ slug }: Props) {
               ))}
               {rows.length === 0 ? (
                 <div className="rounded-xl border border-dashed border-white/25 bg-white/10 px-3 py-3 text-sm text-zinc-200">
-                  Пока нет завершённых матчей для рейтинга.
+                  Лидерборд пока пуст.
                 </div>
               ) : null}
             </div>
           </div>
         </div>
+      </div>
+
+      <div className="md:hidden fixed inset-x-0 bottom-0 z-40 p-4 pb-[max(16px,env(safe-area-inset-bottom))] bg-gradient-to-t from-[#0B1020] to-[#0B1020]/30 backdrop-blur">
+        <button
+          type="button"
+          onClick={createRoom}
+          disabled={!canProceed || !!busy}
+          className="gd-btn-primary w-full h-14 disabled:opacity-50"
+        >
+          {busy === "create" ? "Создаём..." : "Создать комнату"}
+        </button>
       </div>
     </div>
   );

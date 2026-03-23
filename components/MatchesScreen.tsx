@@ -11,8 +11,8 @@ import {
 
 function statusLabel(status: "live" | "upcoming" | "finished") {
   if (status === "live") return "LIVE";
-  if (status === "upcoming") return "UPCOMING";
-  return "FINISHED";
+  if (status === "upcoming") return "Скоро";
+  return "Завершён";
 }
 
 function statusClass(status: "live" | "upcoming" | "finished") {
@@ -40,26 +40,26 @@ export default function MatchesScreen() {
   }, [category, query]);
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-900 via-slate-800 to-slate-700 text-zinc-100">
+    <div className="gd-page">
       <div className="max-w-6xl mx-auto px-4 py-6 md:py-8">
         <div className="flex items-center justify-between gap-3">
           <div>
-            <h1 className="text-3xl md:text-4xl font-black tracking-tight text-white">
-              Матчи и события
-            </h1>
+            <h1 className="text-3xl md:text-4xl font-black tracking-tight text-white">Матчи</h1>
             <p className="text-zinc-200 mt-1">
               Выберите матч, сторону и предсказывайте события в реальном эфире.
             </p>
           </div>
-          <Link
-            href="/leaderboard"
-            className="px-4 py-2 rounded-xl border border-white/25 bg-white/15 hover:bg-white/25 font-semibold text-sm"
-          >
-            Глобальные лидеры
-          </Link>
+          <div className="flex items-center gap-2">
+            <Link href="/leaderboard" className="gd-btn-secondary text-sm">
+              Глобальные лидеры
+            </Link>
+            <div className="h-10 w-10 rounded-full border border-white/20 bg-white/10 flex items-center justify-center">
+              <span className="text-sm">🏅</span>
+            </div>
+          </div>
         </div>
 
-        <div className="mt-5 rounded-2xl border border-white/20 bg-white/12 p-4">
+        <div className="gd-card-soft mt-5">
           <div className="text-sm font-semibold text-white">Как играть</div>
           <ol className="mt-2 text-sm text-zinc-100 list-decimal pl-5 space-y-1">
             <li>Откройте матч и выберите команду, за которую болеете.</li>
@@ -68,35 +68,43 @@ export default function MatchesScreen() {
           </ol>
         </div>
 
-        <div className="mt-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+        <div className="mt-4 flex flex-col gap-3">
           <input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Поиск по командам и турнирам"
-            className="w-full md:max-w-md px-3 py-2.5 rounded-xl bg-white text-zinc-900 placeholder:text-zinc-500 border border-zinc-300 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-300/40"
+            placeholder="Поиск по командам"
+            className="gd-input w-full md:max-w-md"
           />
-          <div className="flex flex-wrap gap-2">
-            {MATCH_CATEGORIES.map((c) => (
-              <button
-                key={c.id}
-                type="button"
-                onClick={() => setCategory(c.id)}
-                className={[
-                  "px-3 py-2 rounded-xl border text-xs font-bold transition",
-                  category === c.id
-                    ? "border-white/35 bg-white/25 text-white"
-                    : "border-white/20 bg-white/10 text-zinc-100 hover:bg-white/20",
-                ].join(" ")}
-              >
-                {c.label}
-              </button>
-            ))}
+          <div className="-mx-1 overflow-x-auto">
+            <div className="flex gap-2 px-1 min-w-max">
+              {MATCH_CATEGORIES.map((c) => (
+                <button
+                  key={c.id}
+                  type="button"
+                  onClick={() => setCategory(c.id)}
+                  className={[
+                    "h-9 px-3 rounded-full border text-xs font-bold transition whitespace-nowrap",
+                    category === c.id
+                      ? "border-blue-300/50 bg-blue-600/80 text-white"
+                      : "border-white/20 bg-white/10 text-zinc-100 hover:bg-white/20",
+                  ].join(" ")}
+                >
+                  {c.label}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
 
         <div className="mt-5 grid grid-cols-1 lg:grid-cols-2 gap-4">
           {filtered.map((m) => (
-            <div key={m.id} className="rounded-2xl border border-white/20 bg-white/12 p-4">
+            <div
+              key={m.id}
+              className={[
+                "gd-card min-h-[148px]",
+                m.status === "live" ? "shadow-[0_18px_38px_rgba(239,68,68,0.18)]" : "",
+              ].join(" ")}
+            >
               <div className="flex items-start justify-between gap-3">
                 <div>
                   <div className="text-xs text-zinc-300">
@@ -131,11 +139,8 @@ export default function MatchesScreen() {
               </div>
 
               <div className="mt-4">
-                <Link
-                  href={`/match/${m.slug}`}
-                  className="inline-flex px-4 py-2.5 rounded-xl bg-emerald-500 text-black font-black hover:bg-emerald-400 transition"
-                >
-                  Открыть матч
+                <Link href={`/match/${m.slug}`} className="gd-btn-primary inline-flex">
+                  Играть
                 </Link>
               </div>
             </div>
@@ -143,8 +148,22 @@ export default function MatchesScreen() {
         </div>
 
         {filtered.length === 0 ? (
-          <div className="mt-5 rounded-2xl border border-dashed border-white/25 bg-white/10 p-5 text-zinc-100">
-            Ничего не найдено. Попробуйте изменить фильтр или поисковый запрос.
+          <div className="gd-card-soft mt-5 border-dashed">
+            {MATCHES.length === 0 ? (
+              <>
+                <div className="font-semibold text-white">Сейчас нет доступных матчей</div>
+                <div className="text-sm text-zinc-300 mt-1">
+                  Проверьте позже или переключите категорию.
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="font-semibold text-white">Ничего не найдено</div>
+                <div className="text-sm text-zinc-300 mt-1">
+                  Попробуйте другое название команды или лиги.
+                </div>
+              </>
+            )}
           </div>
         ) : null}
       </div>

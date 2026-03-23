@@ -74,7 +74,7 @@ export default function LeaderboardScreen() {
   const top3 = rows.slice(0, 3);
 
   return (
-    <div className="min-h-screen bg-[radial-gradient(80%_50%_at_50%_0%,rgba(56,189,248,0.2),rgba(15,23,42,0.1))] bg-slate-900 text-zinc-100">
+    <div className="gd-page">
       <div className="max-w-5xl mx-auto px-4 py-6">
         <div className="flex items-center justify-between gap-3">
           <div>
@@ -83,10 +83,7 @@ export default function LeaderboardScreen() {
               Топ-20 по сумме очков и точности по всем сыгранным матчам.
             </div>
           </div>
-          <Link
-            href="/"
-            className="px-4 py-2 rounded-xl border border-white/25 bg-white/15 hover:bg-white/25 transition text-sm font-semibold text-white"
-          >
+          <Link href="/" className="gd-btn-secondary text-sm">
             К матчам
           </Link>
         </div>
@@ -111,8 +108,8 @@ export default function LeaderboardScreen() {
         </div>
 
         {loading ? (
-          <div className="mt-4 rounded-2xl border border-white/20 bg-white/12 p-4">
-            <div className="text-sm text-zinc-200">Загрузка таблицы лидеров...</div>
+          <div className="gd-card mt-4">
+            <div className="text-sm text-zinc-200">Загружаем матчи…</div>
             <div className="mt-3 grid grid-cols-1 gap-2">
               {[0, 1, 2].map((s) => (
                 <div
@@ -123,19 +120,16 @@ export default function LeaderboardScreen() {
             </div>
           </div>
         ) : error ? (
-          <div className="mt-4 rounded-2xl border border-rose-400/30 bg-rose-500/10 p-4 text-sm text-rose-200">
+          <div className="gd-card mt-4 border-rose-400/30 bg-rose-500/10 text-sm text-rose-200">
             {error}
           </div>
         ) : rows.length === 0 ? (
-          <div className="mt-4 rounded-2xl border border-dashed border-white/25 bg-white/12 p-6 text-center">
-            <div className="text-lg font-bold">Пока нет результатов</div>
+          <div className="gd-card mt-4 border-dashed text-center">
+            <div className="text-lg font-bold">Лидерборд пока пуст</div>
             <div className="mt-1 text-sm text-zinc-200">
               Сыграйте первую игру — и здесь появится топ игроков с точностью по миллисекундам.
             </div>
-            <Link
-              href="/"
-              className="inline-flex mt-4 px-4 py-2 rounded-xl bg-emerald-500 text-black font-black hover:bg-emerald-400 transition"
-            >
+            <Link href="/" className="gd-btn-primary inline-flex mt-4">
               К списку матчей
             </Link>
           </div>
@@ -164,7 +158,7 @@ export default function LeaderboardScreen() {
                     </div>
                     <div className="mt-2 text-xl font-black">{r.total_score}</div>
                     <div className="text-xs text-zinc-300">
-                      avg {formatMs(r.avg_delta_ms)} • best {formatMs(r.best_delta_ms)}
+                      ср. {formatMs(r.avg_delta_ms)} • лучш. {formatMs(r.best_delta_ms)}
                     </div>
                   </motion.div>
                 );
@@ -174,9 +168,9 @@ export default function LeaderboardScreen() {
             {/* Mobile cards */}
             <div className="mt-4 md:hidden space-y-2.5">
               {rows.map((r, idx) => (
-                <div key={r.id} className="rounded-xl border border-white/20 bg-white/12 p-3">
+                <div key={r.id} className="gd-card-soft">
                   <div className="flex items-center justify-between gap-2">
-                    <div className="text-xs font-black text-zinc-400">RANK #{idx + 1}</div>
+                    <div className="text-xs font-black text-zinc-400">МЕСТО #{idx + 1}</div>
                     <span
                       className={[
                         "text-[11px] px-2 py-1 rounded-full border font-bold",

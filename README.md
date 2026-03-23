@@ -42,7 +42,7 @@
 5. После завершения раунда применяется `apply_round_results(...)` (очки, серии, победитель раунда).
 6. В финале вызывается `finalize_game(...)`, данные записываются в `leaderboard`.
 
-Дополнительно в UI реализованы состояния `подключено / переподключение / отключено`, чтобы пользователь всегда понимал статус соединения.
+Дополнительно в UI реализованы состояния `Подключено / Переподключаемся… / Соединение потеряно`, чтобы пользователь всегда понимал статус соединения.
 
 ## Настройка Supabase
 
@@ -115,11 +115,21 @@ npm run dev
 
 E2E smoke:
 
-- `npm run test:e2e` - Playwright сценарий для ключевого пути лобби.
+- `npm run test:e2e` - Playwright сценарий для ключевого пути экрана матчей.
 
 Load smoke:
 
 - `npm run test:load` - k6 smoke тест (требуется установленный `k6`).
+
+### Последний подтверждённый прогон проверок
+
+- `npm run format:check` - пройдено
+- `npm run lint` - пройдено
+- `npm run test:unit` - пройдено
+- `npm run test:e2e` - пройдено
+- `npm run build` - пройдено
+- `npm run audit:deps` - пройдено (0 vulnerabilities)
+- `npm run test:load` - пройдено (k6, 10 VU / 30s, `http_req_failed=0%`, `p95=9.71ms`)
 
 ## Деплой на Vercel
 
@@ -145,11 +155,16 @@ Load smoke:
 
 ```text
 app/
-  page.tsx                 # вход в лобби
+  page.tsx                 # вход в каталог матчей
+  matches/page.tsx         # альтернативный route каталога
+  match/[slug]/page.tsx    # страница матча
+  lobby/page.tsx           # legacy route
   room/[code]/page.tsx     # игровой экран комнаты
   leaderboard/page.tsx     # глобальный лидерборд
 components/
-  LobbyScreen.tsx
+  MatchesScreen.tsx
+  MatchDetailsScreen.tsx
+  LobbyScreen.tsx          # legacy screen
   RoomScreen.tsx
   LeaderboardScreen.tsx
   CountdownTimer.tsx
@@ -181,3 +196,12 @@ types/
 - Персональная статистика игрока между матчами.
 - Набор e2e-тестов для основных пользовательских сценариев.
 - Наблюдаемость продакшена (ошибки, метрики, аналитика).
+
+## Лицензия и права
+
+Проект распространяется как **проприетарный**: `UNLICENSED`.  
+Использование, копирование, модификация и распространение без письменного разрешения правообладателя запрещены.
+
+**Коммерческая лицензия и юридические вопросы:** [djron11@mail.ru](mailto:djron11@mail.ru)
+
+Подробности: `LICENSE`, `NOTICE`.

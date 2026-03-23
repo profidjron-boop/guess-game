@@ -93,9 +93,9 @@ export const MATCHES: MatchCard[] = [
   {
     id: "m3",
     slug: "real-barca-laliga",
-    title: "Real Madrid — Barcelona",
-    homeTeam: "Real Madrid",
-    awayTeam: "Barcelona",
+    title: "Реал Мадрид — Барселона",
+    homeTeam: "Реал Мадрид",
+    awayTeam: "Барселона",
     homeTeamLogo: "⚪",
     awayTeamLogo: "🔵",
     category: "football",
@@ -105,8 +105,8 @@ export const MATCHES: MatchCard[] = [
     modes: [
       {
         eventType: "goal_by_team",
-        label: "Goal by your team",
-        description: "Tap NOW exactly when your selected team scores.",
+        label: "Гол вашей команды",
+        description: "Нажмите «СЕЙЧАС!» в момент гола выбранной команды.",
         teamScope: "selected_team",
       },
     ],
@@ -174,7 +174,7 @@ export const MATCHES: MatchCard[] = [
       },
       {
         eventType: "ace_by_team",
-        label: "Ace вашей команды",
+        label: "Эйс вашей команды",
         description: "Предскажите момент эйса выбранной команды.",
         teamScope: "selected_team",
       },

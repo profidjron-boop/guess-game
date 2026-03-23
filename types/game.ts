@@ -72,7 +72,8 @@ export type Guess = {
   round_id: string;
   player_id: string;
   press_time_ms: number;
-  delta_ms: number;
+  /** null до отметки эталона события на трансляции (mark_round_event) */
+  delta_ms: number | null;
   points: number;
   created_at: string;
 };

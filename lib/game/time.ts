@@ -23,7 +23,7 @@ export function generateEventTimeMs(durationMs: number) {
   return Math.floor(min + Math.random() * (Math.max(min + 1, max) - min));
 }
 
+/** Раунд принимает нажатия после старта; эталон события на эфире задаётся отдельно (mark_round_event). */
 export function isRoundReadyForGuess(round: Round | null) {
-  return !!round && round.status === "running" && round.started_at && round.event_time_ms != null;
+  return !!round && round.status === "running" && !!round.started_at;
 }
-

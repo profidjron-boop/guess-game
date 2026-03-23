@@ -92,8 +92,8 @@ create table if not exists public.guesses (
   room_id uuid not null references public.rooms(id) on delete cascade,
   round_id uuid not null references public.rounds(id) on delete cascade,
   player_id uuid not null,
-  press_time_ms integer not null, -- relative to rounds.started_at (client computed)
-  delta_ms integer not null,       -- press_time_ms - event_time_ms (client computed)
+  press_time_ms integer not null, -- relative to rounds.started_at (server)
+  delta_ms integer,               -- press_time_ms - event_time_ms; null until broadcast moment is fixed
   points integer not null default 0,
   created_at timestamptz not null default now(),
   unique (room_id, round_id, player_id)
@@ -183,6 +183,7 @@ begin
       row_number() over (order by abs(g.delta_ms) asc, g.press_time_ms asc) as rn
     from public.guesses g
     where g.round_id = p_round_id
+      and g.delta_ms is not null
   )
   update public.rounds r
   set winner_player_id = x.player_id
@@ -285,7 +286,7 @@ begin
         select r.category
         from public.guesses g2
         join public.rounds r on r.id = g2.round_id
-        where g2.room_id = p_room_id and g2.player_id = p.player_id
+        where g2.room_id = p_room_id and g2.player_id = p.player_id and g2.delta_ms is not null
         order by abs(g2.delta_ms) asc
         limit 1
       ) as category
@@ -321,7 +322,8 @@ end;
 $$;
 
 -- Server-side guess submit:
--- Computes press_time_ms and delta_ms from DB time, not from client payload.
+-- press_time_ms from DB clock vs round.started_at.
+-- delta_ms заполняется после того, как зафиксирован эталон события на трансляции (mark_round_event).
 create or replace function public.submit_guess_server(
   p_room_id uuid,
   p_round_id uuid,
@@ -351,8 +353,8 @@ begin
     raise exception 'round_not_running';
   end if;
 
-  if v_round.started_at is null or v_round.event_time_ms is null then
-    raise exception 'round_not_ready';
+  if v_round.started_at is null then
+    raise exception 'round_not_started';
   end if;
 
   if not exists (
@@ -378,12 +380,15 @@ begin
     floor(extract(epoch from (clock_timestamp() - v_round.started_at)) * 1000)::integer
   );
 
-  -- Do not accept guesses after round duration window.
   if v_press_time_ms > v_round.duration_ms then
     raise exception 'too_late';
   end if;
 
-  v_delta_ms := v_press_time_ms - v_round.event_time_ms;
+  if v_round.event_time_ms is not null then
+    v_delta_ms := v_press_time_ms - v_round.event_time_ms;
+  else
+    v_delta_ms := null;
+  end if;
 
   insert into public.guesses (
     room_id,
@@ -404,6 +409,88 @@ begin
   returning * into v_row;
 
   return v_row;
+end;
+$$;
+
+-- Хост фиксирует момент события на трансляции (эталон для комнаты). После — пересчёт delta, очки, следующий раунд или финал.
+create or replace function public.mark_round_event(
+  p_room_id uuid,
+  p_round_id uuid,
+  p_host_id uuid
+)
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_room public.rooms%rowtype;
+  v_round public.rounds%rowtype;
+  v_event_ms integer;
+  v_next public.rounds%rowtype;
+begin
+  select * into v_room from public.rooms where id = p_room_id for update;
+  if not found then
+    raise exception 'room_not_found';
+  end if;
+  if v_room.host_id <> p_host_id then
+    raise exception 'not_host';
+  end if;
+
+  select * into v_round from public.rounds where id = p_round_id and room_id = p_room_id for update;
+  if not found then
+    raise exception 'round_not_found';
+  end if;
+  if v_round.status <> 'running' then
+    raise exception 'round_not_running';
+  end if;
+  if v_round.started_at is null then
+    raise exception 'round_not_started';
+  end if;
+  if v_round.event_time_ms is not null then
+    raise exception 'event_already_marked';
+  end if;
+
+  v_event_ms := greatest(
+    0,
+    floor(extract(epoch from (clock_timestamp() - v_round.started_at)) * 1000)::integer
+  );
+
+  if v_event_ms > v_round.duration_ms then
+    raise exception 'too_late_to_mark';
+  end if;
+
+  update public.rounds
+  set event_time_ms = v_event_ms
+  where id = p_round_id;
+
+  update public.guesses g
+  set delta_ms = g.press_time_ms - v_event_ms
+  where g.round_id = p_round_id;
+
+  perform public.apply_round_results(p_room_id, p_round_id);
+
+  select * into v_next
+  from public.rounds
+  where room_id = p_room_id and status = 'pending'
+  order by round_number asc
+  limit 1;
+
+  if FOUND then
+    update public.rounds
+    set status = 'running',
+        started_at = clock_timestamp(),
+        event_time_ms = null
+    where id = v_next.id;
+    update public.rooms
+    set current_round = v_next.round_number
+    where id = p_room_id;
+  else
+    update public.rooms
+    set status = 'finished', current_round = v_room.total_rounds
+    where id = p_room_id;
+    perform public.finalize_game(p_room_id);
+  end if;
 end;
 $$;
 
@@ -550,6 +637,17 @@ grant execute on function public.compute_base_points(integer) to anon, authentic
 grant execute on function public.apply_round_results(uuid, uuid) to anon, authenticated;
 grant execute on function public.finalize_game(uuid) to anon, authenticated;
 grant execute on function public.submit_guess_server(uuid, uuid, uuid) to anon, authenticated;
+grant execute on function public.mark_round_event(uuid, uuid, uuid) to anon, authenticated;
+
+-----------------------
+-- Migration: existing DBs могли иметь delta_ms NOT NULL
+-----------------------
+do $$
+begin
+  alter table public.guesses alter column delta_ms drop not null;
+exception
+  when others then null;
+end $$;
 
 -----------------------
 -- Recommended: set FK constraints

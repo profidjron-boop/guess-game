@@ -5,3 +5,7 @@ grant execute on function public.compute_base_points(integer) to anon, authentic
 grant execute on function public.apply_round_results(uuid, uuid) to anon, authenticated;
 grant execute on function public.finalize_game(uuid) to anon, authenticated;
 grant execute on function public.submit_guess_server(uuid, uuid, uuid) to anon, authenticated;
+grant execute on function public.mark_round_event(uuid, uuid, uuid) to anon, authenticated;
+
+-- После обновления schema.sql выполните весь файл целиком или пересоздайте функции
+-- submit_guess_server / mark_round_event / apply_round_results и миграцию delta_ms.

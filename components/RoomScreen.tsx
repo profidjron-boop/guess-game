@@ -11,7 +11,7 @@ import type { Guess, Participant, Round, Room, RoundTemplate } from "@/types/gam
 import PlayerBadge from "@/components/PlayerBadge";
 import CountdownTimer from "@/components/CountdownTimer";
 import { usePlayerProfile } from "@/hooks/usePlayerProfile";
-import { generateEventTimeMs, isRoundReadyForGuess } from "@/lib/game/time";
+import { isRoundReadyForGuess } from "@/lib/game/time";
 
 type GuessWithFlag = Guess & { hasGuess: true };
 type NoGuess = { hasGuess: false };
@@ -113,6 +113,7 @@ export default function RoomScreen() {
     "reconnecting"
   );
   const [startingGame, setStartingGame] = useState(false);
+  const [markingEvent, setMarkingEvent] = useState(false);
   const [submitMessage, setSubmitMessage] = useState<string | null>(null);
   const [submittingGuess, setSubmittingGuess] = useState(false);
 
@@ -362,6 +363,36 @@ export default function RoomScreen() {
       .eq("player_id", playerId);
   };
 
+  const markBroadcastEvent = async () => {
+    if (!room || !runningRound || !playerId || !isHost) return;
+    if (runningRound.event_time_ms != null) return;
+    try {
+      setMarkingEvent(true);
+      setSubmitMessage(null);
+      const { error } = await supabase.rpc("mark_round_event", {
+        p_room_id: room.id,
+        p_round_id: runningRound.id,
+        p_host_id: playerId,
+      });
+      if (error) throw error;
+      scheduleRefresh();
+    } catch (e: unknown) {
+      const raw = e instanceof Error ? e.message : String(e ?? "");
+      const n = raw.toLowerCase();
+      if (n.includes("not_host")) {
+        setSubmitMessage("Только хост может отметить момент события.");
+      } else if (n.includes("event_already_marked")) {
+        setSubmitMessage("Событие уже отмечено.");
+      } else if (n.includes("too_late_to_mark")) {
+        setSubmitMessage("Окно раунда истекло — нельзя отметить событие.");
+      } else {
+        setSubmitMessage(`Не удалось отметить событие: ${raw.slice(0, 120)}`);
+      }
+    } finally {
+      setMarkingEvent(false);
+    }
+  };
+
   const submitGuess = async () => {
     if (!room || !runningRound || !playerId) return;
     if (!isRoundReadyForGuess(runningRound)) return;
@@ -390,7 +421,7 @@ export default function RoomScreen() {
           round_id: runningRound.id,
           player_id: playerId,
           press_time_ms: 0,
-          delta_ms: 0,
+          delta_ms: null,
           points: 0,
           created_at: new Date().toISOString(),
         });
@@ -403,8 +434,8 @@ export default function RoomScreen() {
         setSubmitMessage("Ответ принят. Ожидаем результат раунда.");
       } else if (normalized.includes("round_not_running")) {
         setSubmitMessage("Раунд уже завершен или еще не начался.");
-      } else if (normalized.includes("round_not_ready")) {
-        setSubmitMessage("Раунд ещё не готов на сервере. Подождите секунду и попробуйте снова.");
+      } else if (normalized.includes("round_not_started")) {
+        setSubmitMessage("Раунд ещё не стартовал на сервере.");
       } else if (normalized.includes("round_not_found")) {
         setSubmitMessage("Раунд не найден. Обновите страницу.");
       } else if (normalized.includes("too_late")) {
@@ -479,7 +510,7 @@ export default function RoomScreen() {
           title: room.event_label ?? t.title,
           category: t.category,
           duration_ms: durationMs,
-          event_time_ms: generateEventTimeMs(durationMs),
+          event_time_ms: null,
           status: "pending",
           match_slug: room.match_slug ?? null,
           event_type: room.event_type ?? null,
@@ -494,6 +525,18 @@ export default function RoomScreen() {
 
       await supabase.from("rounds").insert(toInsert);
 
+      const { data: insertedRounds } = await supabase
+        .from("rounds")
+        .select("*")
+        .eq("room_id", roomId)
+        .order("round_number", { ascending: true });
+
+      if (!insertedRounds || insertedRounds.length === 0) throw new Error("Round insert failed.");
+
+      const list = insertedRounds as Round[];
+      const first = list[0];
+      if (!first) throw new Error("No rounds.");
+
       await supabase
         .from("rooms")
         .update({
@@ -504,45 +547,12 @@ export default function RoomScreen() {
         })
         .eq("id", roomId);
 
-      // Load inserted round IDs
-      const { data: insertedRounds } = await supabase
+      await supabase
         .from("rounds")
-        .select("*")
-        .eq("room_id", roomId)
-        .order("round_number", { ascending: true });
+        .update({ status: "running", started_at: new Date().toISOString() })
+        .eq("id", first.id);
 
-      if (!insertedRounds || insertedRounds.length === 0) throw new Error("Round insert failed.");
-
-      const list = insertedRounds as Round[];
-      const byNum = new Map(list.map((r) => [r.round_number, r]));
-
-      for (let n = 1; n <= list.length; n++) {
-        const r = byNum.get(n);
-        if (!r) continue;
-
-        await supabase
-          .from("rounds")
-          .update({ status: "running", started_at: new Date().toISOString() })
-          .eq("id", r.id);
-
-        await supabase.from("rooms").update({ current_round: n }).eq("id", roomId);
-        scheduleRefresh();
-
-        await new Promise((res) => setTimeout(res, r.duration_ms));
-
-        // Finalize round server-side
-        await supabase.rpc("apply_round_results", { p_room_id: roomId, p_round_id: r.id });
-        scheduleRefresh();
-
-        if (n === list.length) {
-          await supabase
-            .from("rooms")
-            .update({ status: "finished", current_round: list.length })
-            .eq("id", roomId);
-          await supabase.rpc("finalize_game", { p_room_id: roomId });
-          scheduleRefresh();
-        }
-      }
+      scheduleRefresh();
     } finally {
       roundStartLoopRef.current = false;
       setStartingGame(false);
@@ -685,7 +695,8 @@ export default function RoomScreen() {
 
   const myHistorySummary = useMemo(() => {
     const guessed = myRoundHistory.filter((x) => !!x.guess).map((x) => x.guess as Guess);
-    const absDeltas = guessed.map((g) => Math.abs(g.delta_ms));
+    const withDelta = guessed.filter((g) => g.delta_ms != null);
+    const absDeltas = withDelta.map((g) => Math.abs(g.delta_ms as number));
     const bestDelta = absDeltas.length ? Math.min(...absDeltas) : null;
     const avgDelta = absDeltas.length
       ? Math.round(absDeltas.reduce((a, b) => a + b, 0) / absDeltas.length)
@@ -693,7 +704,7 @@ export default function RoomScreen() {
     return {
       bestDelta,
       avgDelta,
-      earlyPresses: guessed.filter((g) => g.delta_ms < 0).length,
+      earlyPresses: withDelta.filter((g) => (g.delta_ms as number) < 0).length,
       roundsPlayed: myRoundHistory.length,
       guessedCount: guessed.length,
     };
@@ -1100,12 +1111,13 @@ export default function RoomScreen() {
                   </span>
                 </div>
                 <h2 className="mt-3 text-xl md:text-2xl font-black text-white leading-tight">
-                  Ориентируйтесь по трансляции, не по таймеру ниже
+                  Эфир — главный ориентир, не интерфейс
                 </h2>
                 <p className="mt-2 text-sm text-zinc-200 leading-relaxed">
-                  Смотрите матч на <b>другом экране</b>. Нажмите «СЕЙЧАС!», когда на эфире
-                  произойдёт нужное событие для вашей команды. Полоска внизу — только техническое
-                  окно для игры между участниками, это <b>не</b> таймер реального матча.
+                  Смотрите матч на <b>другом экране</b>. Нажимайте «СЕЙЧАС!», когда <b>видите</b>{" "}
+                  событие для вашей команды. <b>Хост</b> отдельно отмечает момент этого события на
+                  трансляции — эталон для очков. Полоска внизу — служебное окно между игроками, не
+                  «часы матча».
                 </p>
               </div>
 
@@ -1172,10 +1184,38 @@ export default function RoomScreen() {
                 <div className="text-xs uppercase tracking-wide text-zinc-400">Как играть</div>
                 <div className="mt-1 text-sm text-zinc-100">
                   Держите этот экран рядом с трансляцией. В момент события для{" "}
-                  <b>{myParticipant?.selected_team ?? "вашей команды"}</b> нажмите <b>«СЕЙЧАС!»</b>{" "}
-                  — не раньше и не «по окончании полоски».
+                  <b>{myParticipant?.selected_team ?? "вашей команды"}</b> нажмите <b>«СЕЙЧАС!»</b>.
+                  Не ориентируйтесь на полоску внизу — она не отражает время эфира.
                 </div>
               </div>
+
+              {isHost && runningRound.event_time_ms == null ? (
+                <div className="mt-4 rounded-2xl border border-amber-400/45 bg-amber-500/15 px-4 py-4">
+                  <div className="text-xs font-black uppercase tracking-wide text-amber-200">
+                    Хост — эталон на трансляции
+                  </div>
+                  <p className="mt-2 text-sm text-amber-50/95 leading-relaxed">
+                    Когда на <b>вашем</b> экране с трансляцией произошло целевое событие раунда,
+                    нажмите кнопку ниже. Так задаётся референс времени для всех игроков в комнате (в
+                    демо вместо внешнего API стрима).
+                  </p>
+                  <button
+                    type="button"
+                    onClick={markBroadcastEvent}
+                    disabled={markingEvent || connStatus !== "connected" || startingGame}
+                    className="mt-3 w-full rounded-2xl px-4 py-3 font-black bg-amber-400 text-black hover:bg-amber-300 disabled:opacity-50 disabled:cursor-not-allowed border border-amber-200/40"
+                  >
+                    {markingEvent ? "Фиксируем…" : "Событие на эфире — зафиксировать эталон"}
+                  </button>
+                </div>
+              ) : null}
+
+              {!isHost && runningRound.event_time_ms == null ? (
+                <div className="mt-3 text-xs text-zinc-400 leading-relaxed px-1">
+                  Хост зафиксирует момент события на трансляции (эталон для очков). Нажимайте
+                  «СЕЙЧАС!», когда увидите событие у себя на эфире.
+                </div>
+              ) : null}
 
               <div className="mt-6">
                 <AnimatePresence mode="wait">
@@ -1211,7 +1251,9 @@ export default function RoomScreen() {
                       </span>
                       <span className="text-sm font-bold opacity-90">
                         {myGuess
-                          ? "Ответ принят"
+                          ? myGuess.delta_ms == null
+                            ? "Нажатие записано — ждём эталон хоста"
+                            : "Ответ принят"
                           : submittingGuess
                             ? "Отправка…"
                             : "В момент события на трансляции"}
@@ -1220,12 +1262,6 @@ export default function RoomScreen() {
                   </motion.button>
                 </AnimatePresence>
               </div>
-
-              {!isRoundReadyForGuess(runningRound) ? (
-                <div className="mt-3 text-xs text-amber-200 px-3 py-2 rounded-xl border border-amber-400/25 bg-amber-500/10">
-                  Раунд синхронизируется… как только будет готов, кнопка станет активна.
-                </div>
-              ) : null}
 
               <div className="mt-4">
                 <CountdownTimer round={runningRound} variant="compact" />
@@ -1842,7 +1878,7 @@ export default function RoomScreen() {
                         const g = item.guess;
                         const label = classifyResult(g?.delta_ms).label;
                         const tone = toneClasses(classifyResult(g?.delta_ms).tone);
-                        const isEarly = !!g && g.delta_ms < 0;
+                        const isEarly = !!g && g.delta_ms != null && g.delta_ms < 0;
                         return (
                           <tr key={item.round.id} className="border-t border-white/5">
                             <td className="px-3 py-3 text-sm font-semibold text-zinc-300">
@@ -1856,7 +1892,7 @@ export default function RoomScreen() {
                               {g ? formatMs(g.press_time_ms) : "—"}
                             </td>
                             <td className={clsx("px-3 py-3 text-sm font-semibold", tone.text)}>
-                              {g ? formatMs(g.delta_ms) : "—"}
+                              {g && g.delta_ms != null ? formatMs(g.delta_ms) : "—"}
                             </td>
                             <td className={clsx("px-3 py-3 text-sm font-black", tone.text)}>
                               {g ? g.points : 0}
@@ -1917,7 +1953,9 @@ export default function RoomScreen() {
                           </div>
                           <div className={clsx("text-zinc-400", tone.text)}>
                             Отклонение:{" "}
-                            <span className="font-semibold">{g ? formatMs(g.delta_ms) : "—"}</span>
+                            <span className="font-semibold">
+                              {g && g.delta_ms != null ? formatMs(g.delta_ms) : "—"}
+                            </span>
                           </div>
                           <div className={clsx("text-zinc-400", tone.text)}>
                             Очки: <span className="font-black">{g ? g.points : 0}</span>

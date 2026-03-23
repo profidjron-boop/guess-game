@@ -1029,6 +1029,10 @@ export default function RoomScreen() {
                 <div className="mt-2 text-xs text-zinc-500">
                   Раундов: {room.total_rounds}. Очки и прогресс считаются на сервере.
                 </div>
+                <div className="mt-3 p-3 rounded-xl border border-sky-400/20 bg-sky-500/10 text-xs text-sky-100/95 leading-relaxed">
+                  После «Запустить игру» все ждут <b>событие на трансляции</b>. Таймер в игре —
+                  только служебное окно для приёма нажатий между игроками, а не «часы матча».
+                </div>
               </div>
             </div>
 
@@ -1086,12 +1090,33 @@ export default function RoomScreen() {
         {room.status === "playing" && runningRound && myParticipant ? (
           <div className="mt-6 grid grid-cols-1 lg:grid-cols-3 gap-5">
             <div className="lg:col-span-2 gd-card">
+              <div className="rounded-2xl border border-amber-400/30 bg-gradient-to-br from-amber-500/15 to-transparent px-4 py-4 mb-5">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="gd-chip inline-flex bg-rose-500/20 border-rose-400/30 text-rose-200 text-[11px]">
+                    LIVE
+                  </span>
+                  <span className="text-[11px] px-2 py-1 rounded-full border border-amber-400/40 bg-amber-500/15 text-amber-100 font-bold uppercase tracking-wide">
+                    Ждём событие
+                  </span>
+                </div>
+                <h2 className="mt-3 text-xl md:text-2xl font-black text-white leading-tight">
+                  Ориентируйтесь по трансляции, не по таймеру ниже
+                </h2>
+                <p className="mt-2 text-sm text-zinc-200 leading-relaxed">
+                  Смотрите матч на <b>другом экране</b>. Нажмите «СЕЙЧАС!», когда на эфире
+                  произойдёт нужное событие для вашей команды. Полоска внизу — только техническое
+                  окно для игры между участниками, это <b>не</b> таймер реального матча.
+                </p>
+              </div>
+
               <div className="flex items-start justify-between gap-4">
                 <div>
-                  <div className="text-xs text-zinc-400">Текущий раунд</div>
-                  <div className="text-2xl font-black tracking-tight">{runningRound.title}</div>
+                  <div className="text-xs text-zinc-400">Раунд</div>
+                  <div className="text-xl md:text-2xl font-black tracking-tight">
+                    {runningRound.title}
+                  </div>
                   <div className="mt-1 text-sm text-zinc-400">
-                    Раунд {runningRound.round_number} из {room.total_rounds} •{" "}
+                    {runningRound.round_number} / {room.total_rounds} •{" "}
                     <span
                       className={
                         runningRound.category === "sport" ? "text-sky-200" : "text-fuchsia-200"
@@ -1101,23 +1126,21 @@ export default function RoomScreen() {
                     </span>
                   </div>
                   {room.match_title ? (
-                    <div className="mt-2 text-xs text-zinc-100">
-                      Матч: <span className="font-semibold">{room.match_title}</span>
-                      {room.league ? ` • ${room.league}` : ""} • Вы болеете за:{" "}
-                      <span className="text-emerald-200 font-semibold">
-                        {myParticipant?.selected_team ?? "не выбрана"}
-                      </span>
+                    <div className="mt-3 text-sm text-zinc-100 leading-snug">
+                      <span className="text-zinc-400">Матч:</span>{" "}
+                      <span className="font-semibold">{room.match_title}</span>
+                      {room.league ? (
+                        <>
+                          {" "}
+                          <span className="text-zinc-500">•</span>{" "}
+                          <span className="text-zinc-300">{room.league}</span>
+                        </>
+                      ) : null}
                     </div>
                   ) : null}
                 </div>
-                <div className="text-right">
-                  <div className="gd-chip inline-flex mb-1 bg-rose-500/20 border-rose-400/30 text-rose-200 animate-pulse">
-                    LIVE
-                  </div>
-                  <div className="text-[11px] px-2 py-1 rounded-full border border-amber-400/35 bg-amber-500/15 text-amber-200 font-bold inline-flex">
-                    Ждём событие
-                  </div>
-                  <div className="text-xs text-zinc-400">Текущий счёт</div>
+                <div className="text-right shrink-0">
+                  <div className="text-xs text-zinc-400">Счёт</div>
                   <div className="text-2xl font-black">{myParticipant.score}</div>
                   <div className="text-xs text-zinc-500 mt-1">
                     Серия:{" "}
@@ -1126,31 +1149,35 @@ export default function RoomScreen() {
                 </div>
               </div>
 
+              <div className="mt-5 grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="rounded-xl border border-emerald-400/25 bg-emerald-500/10 px-3 py-3">
+                  <div className="text-[11px] uppercase tracking-wide text-emerald-200/80 font-bold">
+                    Ваша команда
+                  </div>
+                  <div className="text-base font-black text-white mt-1">
+                    {myParticipant?.selected_team ?? "—"}
+                  </div>
+                </div>
+                <div className="rounded-xl border border-sky-400/25 bg-sky-500/10 px-3 py-3">
+                  <div className="text-[11px] uppercase tracking-wide text-sky-200/80 font-bold">
+                    Цель раунда
+                  </div>
+                  <div className="text-base font-black text-white mt-1">
+                    {room.event_label ?? runningRound.title}
+                  </div>
+                </div>
+              </div>
+
               <div className="mt-4 gd-card-soft">
                 <div className="text-xs uppercase tracking-wide text-zinc-400">Как играть</div>
                 <div className="mt-1 text-sm text-zinc-100">
-                  Смотрите трансляцию матча на другом экране и нажмите <b>«СЕЙЧАС!»</b> в момент
-                  события вашей команды.
+                  Держите этот экран рядом с трансляцией. В момент события для{" "}
+                  <b>{myParticipant?.selected_team ?? "вашей команды"}</b> нажмите <b>«СЕЙЧАС!»</b>{" "}
+                  — не раньше и не «по окончании полоски».
                 </div>
               </div>
 
-              <div className="mt-4">
-                <CountdownTimer round={runningRound} />
-              </div>
-
-              <div className="mt-5">
-                <div className="text-xs text-zinc-200 mb-2">
-                  Вы болеете за:{" "}
-                  <span className="font-semibold text-emerald-200">
-                    {myParticipant?.selected_team ?? "вашу команду"}
-                  </span>
-                </div>
-                <div className="text-xs text-zinc-200 mb-2">
-                  Событие:{" "}
-                  <span className="font-semibold text-emerald-200">
-                    {room.event_label ?? "целевое событие вашей команды"}
-                  </span>
-                </div>
+              <div className="mt-6">
                 <AnimatePresence mode="wait">
                   <motion.button
                     type="button"
@@ -1162,7 +1189,7 @@ export default function RoomScreen() {
                       connStatus !== "connected"
                     }
                     className={clsx(
-                      "w-full rounded-3xl px-6 py-6 border transition",
+                      "w-full rounded-3xl px-6 py-7 border transition",
                       myGuess
                         ? "border-emerald-400/30 bg-emerald-500/20 text-emerald-100 cursor-not-allowed"
                         : "border-white/15 bg-emerald-500 text-black hover:bg-emerald-400 shadow-[0_16px_34px_rgba(34,197,94,0.35)]"
@@ -1177,27 +1204,37 @@ export default function RoomScreen() {
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0 }}
                       transition={{ duration: 0.15 }}
-                      className="flex items-center justify-center gap-3"
+                      className="flex flex-col items-center justify-center gap-1 text-center"
                     >
-                      <span className="text-3xl font-black tracking-tight">
+                      <span className="text-3xl md:text-4xl font-black tracking-tight">
                         {submittingGuess ? "..." : "СЕЙЧАС!"}
                       </span>
-                      <span className="text-sm font-bold opacity-80">
+                      <span className="text-sm font-bold opacity-90">
                         {myGuess
                           ? "Ответ принят"
                           : submittingGuess
                             ? "Отправка…"
-                            : "Нажмите в момент события"}
+                            : "В момент события на трансляции"}
                       </span>
                     </motion.div>
                   </motion.button>
                 </AnimatePresence>
               </div>
 
+              {!isRoundReadyForGuess(runningRound) ? (
+                <div className="mt-3 text-xs text-amber-200 px-3 py-2 rounded-xl border border-amber-400/25 bg-amber-500/10">
+                  Раунд синхронизируется… как только будет готов, кнопка станет активна.
+                </div>
+              ) : null}
+
+              <div className="mt-4">
+                <CountdownTimer round={runningRound} variant="compact" />
+              </div>
+
               <div className="mt-4 text-xs text-zinc-400">
                 {myGuess
                   ? "Ожидаем результат раунда."
-                  : "Кнопка блокируется после первого нажатия в раунде."}
+                  : "Один ответ за раунд. Ориентир — эфир, не полоска выше."}
               </div>
               {submitMessage ? (
                 <div className="mt-2 text-xs px-3 py-2 rounded-xl border border-amber-400/30 bg-amber-500/10 text-amber-200">

@@ -16,6 +16,12 @@ Deliverables:
    - smoke tests and test strategy (see test pack)
 
 Status:
-- partially done (build now succeeds без env during CI/build).
-- pending: RLS + tests + stricter anti-cheat.
+- core done:
+  - build succeeds без env during CI/build;
+  - RLS guest policies added to `supabase/schema.sql`;
+  - stricter anti-cheat path enabled via server RPC `submit_guess_server`.
+- open:
+  - automated test coverage;
+  - deployment evidence (staging/prod URL + smoke-check log);
+  - verify schema applied in target Supabase project.
 

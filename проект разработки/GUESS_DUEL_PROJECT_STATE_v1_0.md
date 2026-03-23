@@ -55,8 +55,12 @@ Primary user actions:
 ---
 
 ## 5) Blocking open questions
-1) Нужна ли strict серверная валидация press_time/delta (сейчас delta считается на клиенте, а итоговая математика очков делается на стороне БД)?
-2) Включать ли RLS в production и какие policies под guest-mode?
+Критичных блокеров по архитектуре нет.
+
+Операционные шаги до финального релиза:
+1) Убедиться, что `supabase/schema.sql` применен в целевом проекте Supabase.
+2) Зафиксировать release evidence (staging/prod URL + smoke-check).
+3) Приоритизировать automated e2e для основных пользовательских потоков.
 
 ---
 

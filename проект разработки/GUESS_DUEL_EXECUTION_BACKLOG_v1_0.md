@@ -40,7 +40,17 @@ Deliverables:
 - test strategy + smoke runbook
 - ensure build on vercel with env vars
 
-Status: pending
+Status: in progress (core hardening done; release ops pending)
+
+Done:
+- RLS guest policies добавлены в `supabase/schema.sql`.
+- Server-side submit path реализован через `submit_guess_server`.
+- Build/readme/env readiness закрыты.
+
+Open:
+- Применить schema в целевом Supabase окружении (если ещё не сделано).
+- Зафиксировать deployment evidence (URL + smoke-check).
+- Добавить automated e2e/regression suite.
 
 ---
 

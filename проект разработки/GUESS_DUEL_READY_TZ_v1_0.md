@@ -37,7 +37,11 @@ Project: Guess Duel
 ---
 
 ## 3) Pending / follow-ups (deferred)
-1) В прод-режиме рассмотреть strict серверную валидацию press time (сейчас press/delta вычисляются на клиенте).
-2) Добавить RLS policies для guest-mode.
-3) Покрыть тестами ключевые сценарии (см. `GUESS_DUEL_TEST_STRATEGY_PACK_v1_0.md`).
+1) Добавить automated e2e/regression тесты для ключевых сценариев (см. `GUESS_DUEL_TEST_STRATEGY_PACK_v1_0.md`).
+2) Завершить release evidence: staging/prod URL + smoke-check артефакты после деплоя.
+3) Применить `supabase/schema.sql` в целевом Supabase окружении (если ещё не применено).
+
+## 4) Closed in v1.0
+- Strict серверная валидация клика реализована через `submit_guess_server` (press/delta считаются на стороне БД).
+- RLS policies для guest-mode добавлены в `supabase/schema.sql`.
 

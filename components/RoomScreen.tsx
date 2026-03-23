@@ -20,6 +20,11 @@ type RoundResultsRow = {
   guess: GuessWithFlag | NoGuess;
 };
 
+type MyRoundHistoryRow = {
+  round: Round;
+  guess: Guess | null;
+};
+
 function formatMs(ms: number | null | undefined) {
   if (ms == null) return "—";
   const sign = ms > 0 ? "+" : "";
@@ -444,6 +449,7 @@ export default function RoomScreen() {
   const [playerAccuracies, setPlayerAccuracies] = useState<
     Record<string, { avgAbsDeltaMs: number; bestAbsDeltaMs: number; games: number }>
   >({});
+  const [myRoundHistory, setMyRoundHistory] = useState<MyRoundHistoryRow[]>([]);
 
   useEffect(() => {
     const loadFinalStats = async () => {
@@ -491,11 +497,65 @@ export default function RoomScreen() {
     loadStats();
   }, [room?.status, room?.id, participants, finalStatsLoaded]);
 
+  useEffect(() => {
+    const loadMyHistory = async () => {
+      if (!room || room.status !== "finished" || !playerId) {
+        setMyRoundHistory([]);
+        return;
+      }
+
+      const { data: roundsData } = await supabase
+        .from("rounds")
+        .select("*")
+        .eq("room_id", room.id)
+        .order("round_number", { ascending: true });
+
+      const orderedRounds = (roundsData ?? []) as Round[];
+      if (!orderedRounds.length) {
+        setMyRoundHistory([]);
+        return;
+      }
+
+      const roundIds = orderedRounds.map((r) => r.id);
+      const { data: myGuesses } = await supabase
+        .from("guesses")
+        .select("*")
+        .eq("room_id", room.id)
+        .eq("player_id", playerId)
+        .in("round_id", roundIds);
+
+      const guessMap = new Map<string, Guess>();
+      ((myGuesses ?? []) as Guess[]).forEach((g) => guessMap.set(g.round_id, g));
+
+      setMyRoundHistory(
+        orderedRounds.map((round) => ({
+          round,
+          guess: guessMap.get(round.id) ?? null,
+        }))
+      );
+    };
+
+    loadMyHistory();
+  }, [room?.id, room?.status, playerId]);
+
   const sortedByScore = useMemo(() => {
     return [...participants].sort((a, b) => b.score - a.score);
   }, [participants]);
 
   const top3 = sortedByScore.slice(0, 3);
+
+  const myHistorySummary = useMemo(() => {
+    const guessed = myRoundHistory.filter((x) => !!x.guess).map((x) => x.guess as Guess);
+    const absDeltas = guessed.map((g) => Math.abs(g.delta_ms));
+    const bestDelta = absDeltas.length ? Math.min(...absDeltas) : null;
+    const avgDelta = absDeltas.length ? Math.round(absDeltas.reduce((a, b) => a + b, 0) / absDeltas.length) : null;
+    return {
+      bestDelta,
+      avgDelta,
+      roundsPlayed: myRoundHistory.length,
+      guessedCount: guessed.length,
+    };
+  }, [myRoundHistory]);
 
   // Invitation link (client)
   const inviteLink = useMemo(() => {
@@ -1002,6 +1062,118 @@ export default function RoomScreen() {
                 >
                   Вернуться в лобби
                 </button>
+              </div>
+
+              <div className="mt-6 rounded-2xl border border-white/10 bg-black/20 p-4 md:p-5">
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <div className="text-lg font-bold">История раундов</div>
+                    <div className="text-xs text-zinc-500 mt-1">
+                      Детализация результата по каждому сыгранному раунду.
+                    </div>
+                  </div>
+                  <div className="text-xs text-zinc-500">
+                    {myHistorySummary.guessedCount}/{myHistorySummary.roundsPlayed} нажатий
+                  </div>
+                </div>
+
+                <div className="mt-4 grid grid-cols-2 md:grid-cols-4 gap-2.5">
+                  <div className="rounded-xl border border-emerald-400/30 bg-emerald-500/10 px-3 py-2">
+                    <div className="text-[11px] uppercase tracking-wide text-zinc-400">Best delta</div>
+                    <div className="text-sm font-black text-emerald-200">
+                      {myHistorySummary.bestDelta != null ? `${myHistorySummary.bestDelta}ms` : "—"}
+                    </div>
+                  </div>
+                  <div className="rounded-xl border border-sky-400/30 bg-sky-500/10 px-3 py-2">
+                    <div className="text-[11px] uppercase tracking-wide text-zinc-400">Average delta</div>
+                    <div className="text-sm font-black text-sky-200">
+                      {myHistorySummary.avgDelta != null ? `${myHistorySummary.avgDelta}ms` : "—"}
+                    </div>
+                  </div>
+                  <div className="rounded-xl border border-white/15 bg-white/5 px-3 py-2">
+                    <div className="text-[11px] uppercase tracking-wide text-zinc-400">Total score</div>
+                    <div className="text-sm font-black text-white">{myParticipant?.score ?? 0}</div>
+                  </div>
+                  <div className="rounded-xl border border-amber-400/30 bg-amber-500/10 px-3 py-2">
+                    <div className="text-[11px] uppercase tracking-wide text-zinc-400">Best streak</div>
+                    <div className="text-sm font-black text-amber-200">{myParticipant?.max_streak ?? 0}</div>
+                  </div>
+                </div>
+
+                {/* Desktop table */}
+                <div className="mt-4 hidden md:block overflow-x-auto">
+                  <table className="w-full text-left">
+                    <thead>
+                      <tr className="text-xs uppercase text-zinc-400 bg-white/5">
+                        <th className="px-3 py-3">Раунд</th>
+                        <th className="px-3 py-3">Событие</th>
+                        <th className="px-3 py-3">Факт</th>
+                        <th className="px-3 py-3">Нажатие</th>
+                        <th className="px-3 py-3">Отклонение</th>
+                        <th className="px-3 py-3">Очки</th>
+                        <th className="px-3 py-3">Статус</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {myRoundHistory.map((item) => {
+                        const g = item.guess;
+                        const label = classifyResult(g?.delta_ms).label;
+                        const tone = toneClasses(classifyResult(g?.delta_ms).tone);
+                        const isEarly = !!g && g.delta_ms < 0;
+                        return (
+                          <tr key={item.round.id} className="border-t border-white/5">
+                            <td className="px-3 py-3 text-sm font-semibold text-zinc-300">#{item.round.round_number}</td>
+                            <td className="px-3 py-3 text-sm text-zinc-100">{item.round.title}</td>
+                            <td className="px-3 py-3 text-sm text-zinc-200">{formatMs(item.round.event_time_ms)}</td>
+                            <td className="px-3 py-3 text-sm text-zinc-200">{g ? formatMs(g.press_time_ms) : "—"}</td>
+                            <td className={clsx("px-3 py-3 text-sm font-semibold", tone.text)}>
+                              {g ? formatMs(g.delta_ms) : "—"}
+                            </td>
+                            <td className={clsx("px-3 py-3 text-sm font-black", tone.text)}>{g ? g.points : 0}</td>
+                            <td className="px-3 py-3">
+                              <span className={clsx("text-[11px] px-2 py-1 rounded-full border font-bold", tone.pill)}>
+                                {g ? (isEarly ? "Too early" : label) : "Missed the moment"}
+                              </span>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Mobile cards */}
+                <div className="mt-4 md:hidden space-y-2.5">
+                  {myRoundHistory.map((item) => {
+                    const g = item.guess;
+                    const result = classifyResult(g?.delta_ms);
+                    const tone = toneClasses(result.tone);
+                    return (
+                      <div key={item.round.id} className="rounded-xl border border-white/10 bg-white/5 p-3">
+                        <div className="flex items-center justify-between gap-2">
+                          <div className="text-sm font-black">#{item.round.round_number} {item.round.title}</div>
+                          <span className={clsx("text-[11px] px-2 py-1 rounded-full border font-bold", tone.pill)}>
+                            {g ? result.label : "Missed the moment"}
+                          </span>
+                        </div>
+                        <div className="mt-2 grid grid-cols-2 gap-2 text-xs">
+                          <div className="text-zinc-400">
+                            Факт: <span className="text-zinc-200 font-semibold">{formatMs(item.round.event_time_ms)}</span>
+                          </div>
+                          <div className="text-zinc-400">
+                            Нажатие: <span className="text-zinc-200 font-semibold">{g ? formatMs(g.press_time_ms) : "—"}</span>
+                          </div>
+                          <div className={clsx("text-zinc-400", tone.text)}>
+                            Отклонение: <span className="font-semibold">{g ? formatMs(g.delta_ms) : "—"}</span>
+                          </div>
+                          <div className={clsx("text-zinc-400", tone.text)}>
+                            Очки: <span className="font-black">{g ? g.points : 0}</span>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
             </motion.div>
           </div>

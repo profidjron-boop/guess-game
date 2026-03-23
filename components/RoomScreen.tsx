@@ -25,6 +25,14 @@ type MyRoundHistoryRow = {
   guess: Guess | null;
 };
 
+type PlayerMetrics = {
+  avgAbsDeltaMs: number;
+  bestAbsDeltaMs: number;
+  earlyPresses: number;
+  roundsWon: number;
+  fastestTriggerMs: number | null;
+};
+
 function formatMs(ms: number | null | undefined) {
   if (ms == null) return "—";
   const sign = ms > 0 ? "+" : "";
@@ -519,9 +527,7 @@ export default function RoomScreen() {
   };
 
   const [finalStatsLoaded, setFinalStatsLoaded] = useState(false);
-  const [playerAccuracies, setPlayerAccuracies] = useState<
-    Record<string, { avgAbsDeltaMs: number; bestAbsDeltaMs: number; games: number }>
-  >({});
+  const [playerMetrics, setPlayerMetrics] = useState<Record<string, PlayerMetrics>>({});
   const [myRoundHistory, setMyRoundHistory] = useState<MyRoundHistoryRow[]>([]);
 
   useEffect(() => {
@@ -539,36 +545,47 @@ export default function RoomScreen() {
 
       const { data: gs } = await supabase
         .from("guesses")
-        .select("player_id,delta_ms")
+        .select("player_id,delta_ms,press_time_ms,round_id")
         .eq("room_id", room.id);
 
-      const next: Record<string, { sum: number; count: number; best: number }> = {};
-      type GuessDeltaRow = { player_id: string; delta_ms: number };
+      const next: Record<string, { sum: number; count: number; best: number; early: number; fastest: number | null }> = {};
+      type GuessStatsRow = { player_id: string; delta_ms: number; press_time_ms: number; round_id: string };
       (gs ?? []).forEach((g) => {
-        const row = g as GuessDeltaRow;
+        const row = g as GuessStatsRow;
         const pid = row.player_id;
         const abs = Math.abs(row.delta_ms);
-        if (!next[pid]) next[pid] = { sum: 0, count: 0, best: abs };
+        if (!next[pid]) next[pid] = { sum: 0, count: 0, best: abs, early: 0, fastest: null };
         next[pid].sum += abs;
         next[pid].count += 1;
         next[pid].best = Math.min(next[pid].best, abs);
+        if (row.delta_ms < 0) next[pid].early += 1;
+        if (next[pid].fastest == null) next[pid].fastest = row.press_time_ms;
+        else next[pid].fastest = Math.min(next[pid].fastest as number, row.press_time_ms);
       });
 
-      const out: Record<string, { avgAbsDeltaMs: number; bestAbsDeltaMs: number; games: number }> = {};
+      const winsByPlayer: Record<string, number> = {};
+      rounds.forEach((r) => {
+        if (!r.winner_player_id) return;
+        winsByPlayer[r.winner_player_id] = (winsByPlayer[r.winner_player_id] ?? 0) + 1;
+      });
+
+      const out: Record<string, PlayerMetrics> = {};
       participants.forEach((p) => {
         const s = next[p.player_id];
         out[p.player_id] = {
           avgAbsDeltaMs: s ? Math.round(s.sum / Math.max(1, s.count)) : 0,
           bestAbsDeltaMs: s ? s.best : 0,
-          games: 1,
+          earlyPresses: s ? s.early : 0,
+          roundsWon: winsByPlayer[p.player_id] ?? 0,
+          fastestTriggerMs: s ? s.fastest : null,
         };
       });
 
-      setPlayerAccuracies(out);
+      setPlayerMetrics(out);
       setFinalStatsLoaded(true);
     };
     loadStats();
-  }, [room?.status, room?.id, participants, finalStatsLoaded]);
+  }, [room?.status, room?.id, participants, rounds, finalStatsLoaded]);
 
   useEffect(() => {
     const loadMyHistory = async () => {
@@ -625,10 +642,44 @@ export default function RoomScreen() {
     return {
       bestDelta,
       avgDelta,
+      earlyPresses: guessed.filter((g) => g.delta_ms < 0).length,
       roundsPlayed: myRoundHistory.length,
       guessedCount: guessed.length,
     };
   }, [myRoundHistory]);
+
+  const badgeLeaders = useMemo(() => {
+    if (!participants.length) return null;
+    const byScore = [...participants].sort((a, b) => b.score - a.score);
+    const withMetrics = participants.map((p) => ({
+      playerId: p.player_id,
+      nickname: p.nickname,
+      maxStreak: p.max_streak,
+      metrics: playerMetrics[p.player_id],
+    }));
+
+    const mostAccurate = [...withMetrics]
+      .filter((x) => x.metrics && x.metrics.bestAbsDeltaMs > 0)
+      .sort((a, b) => (a.metrics!.bestAbsDeltaMs - b.metrics!.bestAbsDeltaMs))[0];
+
+    const bestStreak = [...withMetrics].sort((a, b) => b.maxStreak - a.maxStreak)[0];
+
+    const fastestTrigger = [...withMetrics]
+      .filter((x) => x.metrics && x.metrics.fastestTriggerMs != null)
+      .sort((a, b) => (a.metrics!.fastestTriggerMs as number) - (b.metrics!.fastestTriggerMs as number))[0];
+
+    const roundWinner = [...withMetrics]
+      .filter((x) => x.metrics && x.metrics.roundsWon > 0)
+      .sort((a, b) => b.metrics!.roundsWon - a.metrics!.roundsWon)[0];
+
+    return {
+      mostAccurate,
+      bestStreak,
+      fastestTrigger,
+      roundWinner,
+      topByScore: byScore[0],
+    };
+  }, [participants, playerMetrics]);
 
   // Invitation link (client)
   const inviteLink = useMemo(() => {
@@ -1074,7 +1125,12 @@ export default function RoomScreen() {
                   const tier = idx === 0 ? "bg-emerald-500/20" : idx === 1 ? "bg-sky-500/20" : "bg-fuchsia-500/20";
                   const border =
                     idx === 0 ? "border-emerald-400/30" : idx === 1 ? "border-sky-400/30" : "border-fuchsia-400/30";
-                  const stats = playerAccuracies[p.player_id];
+                  const stats = playerMetrics[p.player_id];
+                  const badges: string[] = [];
+                  if (badgeLeaders?.mostAccurate?.playerId === p.player_id) badges.push("Most Accurate");
+                  if (badgeLeaders?.bestStreak?.playerId === p.player_id) badges.push("Best Streak");
+                  if (badgeLeaders?.fastestTrigger?.playerId === p.player_id) badges.push("Fastest Trigger");
+                  if (badgeLeaders?.roundWinner?.playerId === p.player_id) badges.push("Round Winner");
                   return (
                     <motion.div
                       key={p.id}
@@ -1088,6 +1144,17 @@ export default function RoomScreen() {
                         <PlayerBadge nickname={p.nickname} avatar={p.avatar} />
                       </div>
                       <div className="mt-4 text-3xl font-black">{p.score}</div>
+                      <div className="mt-2 flex flex-wrap gap-1.5">
+                        {badges.length ? (
+                          badges.map((b) => (
+                            <span key={b} className="text-[10px] px-2 py-1 rounded-full border border-white/20 bg-white/10 text-zinc-100 font-bold">
+                              {b}
+                            </span>
+                          ))
+                        ) : (
+                          <span className="text-[10px] text-zinc-400">—</span>
+                        )}
+                      </div>
                       <div className="mt-1 text-sm text-zinc-300">
                         Лучшая точность: <span className="text-emerald-200 font-semibold">{stats?.bestAbsDeltaMs ?? 0}мс</span>
                       </div>
@@ -1098,9 +1165,33 @@ export default function RoomScreen() {
                       <div className="mt-1 text-sm text-zinc-300">
                         Серия: <span className="text-emerald-200 font-semibold">{p.max_streak}</span>
                       </div>
+                      <div className="mt-1 text-sm text-zinc-300">
+                        Побед в раундах: <span className="text-amber-200 font-semibold">{stats?.roundsWon ?? 0}</span>
+                      </div>
+                      <div className="mt-1 text-sm text-zinc-300">
+                        Ранних нажатий: <span className="text-rose-200 font-semibold">{stats?.earlyPresses ?? 0}</span>
+                      </div>
                     </motion.div>
                   );
                 })}
+              </div>
+
+              <div className="mt-4 rounded-2xl border border-white/10 bg-black/20 p-3.5">
+                <div className="text-xs uppercase text-zinc-400">Глобальные бейджи матча</div>
+                <div className="mt-2 flex flex-wrap gap-2">
+                  <span className="text-xs px-2 py-1 rounded-full border border-emerald-400/30 bg-emerald-500/10 text-emerald-200">
+                    Most Accurate: {badgeLeaders?.mostAccurate?.nickname ?? "—"}
+                  </span>
+                  <span className="text-xs px-2 py-1 rounded-full border border-sky-400/30 bg-sky-500/10 text-sky-200">
+                    Best Streak: {badgeLeaders?.bestStreak?.nickname ?? "—"}
+                  </span>
+                  <span className="text-xs px-2 py-1 rounded-full border border-fuchsia-400/30 bg-fuchsia-500/10 text-fuchsia-200">
+                    Fastest Trigger: {badgeLeaders?.fastestTrigger?.nickname ?? "—"}
+                  </span>
+                  <span className="text-xs px-2 py-1 rounded-full border border-amber-400/30 bg-amber-500/10 text-amber-200">
+                    Round Winner: {badgeLeaders?.roundWinner?.nickname ?? "—"}
+                  </span>
+                </div>
               </div>
 
               <div className="mt-6 overflow-x-auto">
@@ -1117,7 +1208,7 @@ export default function RoomScreen() {
                   </thead>
                   <tbody>
                     {sortedByScore.map((p, idx) => {
-                      const stats = playerAccuracies[p.player_id];
+                      const stats = playerMetrics[p.player_id];
                       return (
                         <tr key={p.id} className="border-t border-white/5 hover:bg-white/5 transition">
                           <td className="px-4 py-3 text-sm font-black text-zinc-300">{idx + 1}</td>
@@ -1195,6 +1286,14 @@ export default function RoomScreen() {
                   <div className="rounded-xl border border-amber-400/30 bg-amber-500/10 px-3 py-2">
                     <div className="text-[11px] uppercase tracking-wide text-zinc-400">Best streak</div>
                     <div className="text-sm font-black text-amber-200">{myParticipant?.max_streak ?? 0}</div>
+                  </div>
+                  <div className="rounded-xl border border-rose-400/30 bg-rose-500/10 px-3 py-2">
+                    <div className="text-[11px] uppercase tracking-wide text-zinc-400">Ранние нажатия</div>
+                    <div className="text-sm font-black text-rose-200">{myHistorySummary.earlyPresses}</div>
+                  </div>
+                  <div className="rounded-xl border border-violet-400/30 bg-violet-500/10 px-3 py-2">
+                    <div className="text-[11px] uppercase tracking-wide text-zinc-400">Побед в раундах</div>
+                    <div className="text-sm font-black text-violet-200">{playerMetrics[playerId ?? ""]?.roundsWon ?? 0}</div>
                   </div>
                 </div>
 

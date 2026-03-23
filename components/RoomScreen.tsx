@@ -89,9 +89,13 @@ export default function RoomScreen() {
   const [participants, setParticipants] = useState<Participant[]>([]);
   const [rounds, setRounds] = useState<Round[]>([]);
   const [loading, setLoading] = useState(true);
+  const [connStatus, setConnStatus] = useState<"connected" | "reconnecting" | "disconnected">("reconnecting");
+  const [startingGame, setStartingGame] = useState(false);
 
   const refreshLockRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const roundStartLoopRef = useRef(false);
+  const refreshInFlightRef = useRef(false);
+  const refreshQueuedRef = useRef(false);
 
   const myParticipant = useMemo(() => {
     if (!playerId) return null;
@@ -103,9 +107,14 @@ export default function RoomScreen() {
     return room.host_id === playerId;
   }, [room, playerId]);
 
-  const refresh = async () => {
+  const refresh = async (opts?: { silent?: boolean }) => {
     if (!roomCode) return;
-    setLoading(true);
+    if (refreshInFlightRef.current) {
+      refreshQueuedRef.current = true;
+      return;
+    }
+    refreshInFlightRef.current = true;
+    if (!opts?.silent && !room) setLoading(true);
     try {
       const { data: r, error: rErr } = await supabase
         .from("rooms")
@@ -128,8 +137,14 @@ export default function RoomScreen() {
         .eq("room_id", (r as Room).id)
         .order("round_number", { ascending: true });
       setRounds((ro.data ?? []) as Round[]);
+      setConnStatus("connected");
     } finally {
-      setLoading(false);
+      if (!opts?.silent && !room) setLoading(false);
+      refreshInFlightRef.current = false;
+      if (refreshQueuedRef.current) {
+        refreshQueuedRef.current = false;
+        refresh({ silent: true });
+      }
     }
   };
 
@@ -193,7 +208,20 @@ export default function RoomScreen() {
           },
           () => scheduleRefresh()
         )
-        .subscribe();
+        .subscribe((status) => {
+          if (status === "SUBSCRIBED") {
+            setConnStatus("connected");
+            refresh({ silent: true });
+            return;
+          }
+          if (status === "TIMED_OUT" || status === "CHANNEL_ERROR") {
+            setConnStatus("reconnecting");
+            return;
+          }
+          if (status === "CLOSED") {
+            setConnStatus("disconnected");
+          }
+        });
     };
 
     init();
@@ -347,9 +375,24 @@ export default function RoomScreen() {
     if (room.status !== "waiting") return;
     if (roundStartLoopRef.current) return;
     roundStartLoopRef.current = true;
+    setStartingGame(true);
 
     try {
       const roomId = room.id;
+      // Acquire a lightweight "start lock" to reduce race between multiple host tabs.
+      const { data: lockRows } = await supabase
+        .from("rooms")
+        .update({ current_round: -1 })
+        .eq("id", roomId)
+        .eq("status", "waiting")
+        .eq("current_round", 0)
+        .eq("host_id", playerId)
+        .select("id");
+
+      if (!lockRows || lockRows.length === 0) {
+        await refresh({ silent: true });
+        return;
+      }
 
       // Create rounds for this game
       const { data: templates } = await supabase
@@ -426,6 +469,7 @@ export default function RoomScreen() {
       }
     } finally {
       roundStartLoopRef.current = false;
+      setStartingGame(false);
     }
   };
 
@@ -598,14 +642,34 @@ export default function RoomScreen() {
             </div>
           </div>
 
-          <div className="text-right">
-            {myParticipant ? (
-              <PlayerBadge nickname={myParticipant.nickname} avatar={myParticipant.avatar} compact />
-            ) : (
-              <div className="text-xs text-zinc-500">Подключение...</div>
-            )}
+          <div className="text-right flex items-center gap-2">
+            <span
+              className={clsx(
+                "text-[11px] px-2 py-1 rounded-full border font-bold",
+                connStatus === "connected" && "border-emerald-400/40 bg-emerald-500/15 text-emerald-200",
+                connStatus === "reconnecting" && "border-amber-400/40 bg-amber-500/15 text-amber-200",
+                connStatus === "disconnected" && "border-rose-400/40 bg-rose-500/15 text-rose-200"
+              )}
+            >
+              {connStatus}
+            </span>
+            {myParticipant ? <PlayerBadge nickname={myParticipant.nickname} avatar={myParticipant.avatar} compact /> : <div className="text-xs text-zinc-500">Подключение...</div>}
           </div>
         </div>
+
+        {connStatus !== "connected" ? (
+          <div
+            className={clsx(
+              "mt-3 px-3 py-2 rounded-xl border text-xs font-semibold",
+              connStatus === "reconnecting" && "border-amber-400/30 bg-amber-500/10 text-amber-200",
+              connStatus === "disconnected" && "border-rose-400/30 bg-rose-500/10 text-rose-200"
+            )}
+          >
+            {connStatus === "reconnecting"
+              ? "Соединение нестабильно, пытаемся переподключиться. Интерфейс продолжает работать."
+              : "Соединение потеряно. Ожидаем восстановление канала и синхронизацию состояния."}
+          </div>
+        ) : null}
 
         {/* WAITING ROOM */}
         {room.status === "waiting" ? (
@@ -653,13 +717,13 @@ export default function RoomScreen() {
                 <button
                   type="button"
                   onClick={startGame}
-                  disabled={!isHost || room.status !== "waiting"}
+                  disabled={!isHost || room.status !== "waiting" || startingGame || connStatus !== "connected"}
                   className={clsx(
                     "w-full px-4 py-3 rounded-xl font-black transition",
                     isHost ? "bg-emerald-500 text-black hover:bg-emerald-400" : "bg-white/10 text-zinc-300 cursor-not-allowed"
                   )}
                 >
-                  {isHost ? "Запустить игру" : "Ждём хоста"}
+                  {isHost ? (startingGame ? "Запускаем..." : "Запустить игру") : "Ждём хоста"}
                 </button>
                 <div className="mt-2 text-xs text-zinc-500">
                   Раундов: {room.total_rounds}. Очки и прогресс считаются на сервере.

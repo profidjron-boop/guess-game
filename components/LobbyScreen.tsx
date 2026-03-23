@@ -25,6 +25,7 @@ export default function LobbyScreen() {
   const [rooms, setRooms] = useState<Room[]>([]);
   const [loadingRooms, setLoadingRooms] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [busyAction, setBusyAction] = useState<"create" | "join" | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [joinCode, setJoinCode] = useState("");
 
@@ -63,6 +64,7 @@ export default function LobbyScreen() {
     if (!profile) return;
     setError(null);
     setBusy(true);
+    setBusyAction("create");
     try {
       await persistProfile();
 
@@ -107,6 +109,7 @@ export default function LobbyScreen() {
       setError(msg);
     } finally {
       setBusy(false);
+      setBusyAction(null);
     }
   };
 
@@ -119,6 +122,7 @@ export default function LobbyScreen() {
     }
     setError(null);
     setBusy(true);
+    setBusyAction("join");
     try {
       const { data: roomRow, error: roomErr } = await supabase
         .from("rooms")
@@ -147,6 +151,7 @@ export default function LobbyScreen() {
       setError(msg);
     } finally {
       setBusy(false);
+      setBusyAction(null);
     }
   };
 
@@ -207,7 +212,7 @@ export default function LobbyScreen() {
               disabled={!canProceed || busy}
               className="w-full px-4 py-3.5 rounded-2xl bg-emerald-500 text-black font-black transition hover:bg-emerald-400 focus:outline-none focus:ring-2 focus:ring-emerald-300/30 disabled:opacity-50 disabled:hover:bg-emerald-500"
             >
-              Создать комнату
+              {busy && busyAction === "create" ? "Создаём..." : "Создать комнату"}
             </button>
             <div className="flex gap-2.5">
               <input
@@ -222,7 +227,7 @@ export default function LobbyScreen() {
                 disabled={!canProceed || busy}
                 className="px-4 py-3.5 rounded-2xl border border-white/15 bg-white/10 hover:bg-white/15 text-white font-bold transition focus:outline-none focus:ring-2 focus:ring-white/20 disabled:opacity-50"
               >
-                Войти
+                {busy && busyAction === "join" ? "Входим..." : "Войти"}
               </button>
             </div>
           </div>
@@ -274,7 +279,9 @@ export default function LobbyScreen() {
 
               <div className="mt-3 space-y-2">
                 {rooms.length === 0 ? (
-                  <div className="text-sm text-zinc-500">Пока нет активных комнат. Создайте новую.</div>
+                  <div className="rounded-xl border border-dashed border-white/15 bg-black/20 px-3 py-4 text-sm text-zinc-400">
+                    Сейчас активных комнат нет. Создайте новую и пригласите игроков по коду.
+                  </div>
                 ) : (
                   rooms.map((r) => (
                     <button

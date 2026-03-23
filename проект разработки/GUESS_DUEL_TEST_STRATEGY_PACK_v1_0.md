@@ -100,3 +100,8 @@ Project: Guess Duel
 - thresholds:
   - `http_req_failed < 1%` -> passed (`0.00%`)
   - `http_req_duration p(95) < 600ms` -> passed (`9.71ms`)
+
+7. Re-validation run (2026-03-24, post-UX update):
+
+- `format:check`, `lint`, `test:unit`, `test:e2e`, `build`, `audit:deps`, `test:load` -> passed
+- load p95 on re-run: `23.62ms`, error rate: `0.00%`

@@ -131,6 +131,8 @@ Load smoke:
 - `npm run audit:deps` - пройдено (0 vulnerabilities)
 - `npm run test:load` - пройдено (k6, 10 VU / 30s, `http_req_failed=0%`, `p95=9.71ms`)
 
+Актуализировано: 2026-03-24 (после доработки game-screen в стиле second-screen: акцент на матч/событие, а не на внутренний таймер).
+
 ## Деплой на Vercel
 
 1. Импортируйте репозиторий в Vercel.

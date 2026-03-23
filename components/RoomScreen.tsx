@@ -1075,7 +1075,7 @@ export default function RoomScreen() {
               <div className="flex items-start justify-between gap-4">
                 <div>
                   <div className="text-xs text-zinc-400">Текущий раунд</div>
-                  <div className="text-3xl font-black tracking-tight">{runningRound.title}</div>
+                  <div className="text-2xl font-black tracking-tight">{runningRound.title}</div>
                   <div className="mt-1 text-sm text-zinc-400">
                     Раунд {runningRound.round_number} из {room.total_rounds} •{" "}
                     <span
@@ -1100,6 +1100,9 @@ export default function RoomScreen() {
                   <div className="gd-chip inline-flex mb-1 bg-rose-500/20 border-rose-400/30 text-rose-200 animate-pulse">
                     LIVE
                   </div>
+                  <div className="text-[11px] px-2 py-1 rounded-full border border-amber-400/35 bg-amber-500/15 text-amber-200 font-bold inline-flex">
+                    Ждём событие
+                  </div>
                   <div className="text-xs text-zinc-400">Текущий счёт</div>
                   <div className="text-2xl font-black">{myParticipant.score}</div>
                   <div className="text-xs text-zinc-500 mt-1">
@@ -1109,11 +1112,25 @@ export default function RoomScreen() {
                 </div>
               </div>
 
+              <div className="mt-4 gd-card-soft">
+                <div className="text-xs uppercase tracking-wide text-zinc-400">Как играть</div>
+                <div className="mt-1 text-sm text-zinc-100">
+                  Смотрите трансляцию матча на другом экране и нажмите <b>«СЕЙЧАС!»</b> в момент
+                  события вашей команды.
+                </div>
+              </div>
+
               <div className="mt-4">
                 <CountdownTimer round={runningRound} />
               </div>
 
               <div className="mt-5">
+                <div className="text-xs text-zinc-200 mb-2">
+                  Вы болеете за:{" "}
+                  <span className="font-semibold text-emerald-200">
+                    {myParticipant?.selected_team ?? "вашу команду"}
+                  </span>
+                </div>
                 <div className="text-xs text-zinc-200 mb-2">
                   Событие:{" "}
                   <span className="font-semibold text-emerald-200">

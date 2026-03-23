@@ -78,4 +78,5 @@ Primary user actions:
 - Code baseline: `main` branch, commits `f17102b`, `29934a8`.
 - Supabase schema: applied (user-confirmed) from `supabase/schema.sql`.
 - QA baseline executed: `format:check`, `lint`, `test:unit`, `test:e2e`, `build`, `audit:deps`, `test:load`.
+- Re-validation after second-screen UX adjustment (2026-03-24): all checks passed.
 - Legal status: proprietary distribution (`UNLICENSED`, root `LICENSE`).

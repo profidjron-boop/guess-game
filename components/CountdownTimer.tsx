@@ -39,8 +39,8 @@ export default function CountdownTimer({ round }: Props) {
     <div className="space-y-2">
       <div className="flex items-end justify-between gap-3">
         <div>
-          <div className="text-xs text-zinc-400">Таймер</div>
-          <div className={clsx("text-4xl font-black tracking-tight", urgency && "text-red-400")}>
+          <div className="text-xs text-zinc-400">Внутренний таймер раунда</div>
+          <div className={clsx("text-3xl font-black tracking-tight", urgency && "text-red-400")}>
             {countdown.seconds}.{String(countdown.tenths)}
           </div>
         </div>
